@@ -1,0 +1,13 @@
+# ninja log v6
+3	3934	1777742677075595697	CMakeFiles/6dof_orbit_sim.dir/src/elements.cpp.o	af4e432391b9195d
+4	4037	1777742677076943332	tests/CMakeFiles/test_state_conversions.dir/test_state_conversions.cpp.o	c1f24b7b84b28c8a
+3	4536	1777742677075842574	CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o	241665ec9c1e0ed2
+3	4594	1777742677075184511	CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o	429076a462383e4b
+9	1992	1777742771584625425	CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o	86e582871e766121
+15	3119	1777743614800447665	CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o	241665ec9c1e0ed2
+14	3169	1777743614798748058	CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o	429076a462383e4b
+15	268	1777743920095363687	lib6dof_orbit_sim.a	3ccfab0b3c401f1c
+16	2916	1777743920096627717	tests/CMakeFiles/test_translational_dynamics.dir/test_translational_dynamics.cpp.o	a5c33eda688320bc
+10	407	1777743982916960045	tests/test_translational_dynamics	7fb6518f44fd1181
+10	1838	1777743982916421680	tests/CMakeFiles/test_state_conversions.dir/test_state_conversions.cpp.o	c1f24b7b84b28c8a
+1839	1943	1777743984745233109	tests/test_state_conversions	298d60ad830d9b81

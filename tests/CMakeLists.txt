@@ -1,0 +1,5 @@
+add_executable(test_state_conversions test_state_conversions.cpp)
+target_link_libraries(test_state_conversions PRIVATE 6dof_orbit_sim)
+
+add_executable(test_translational_dynamics test_translational_dynamics.cpp)
+target_link_libraries(test_translational_dynamics PRIVATE 6dof_orbit_sim)
