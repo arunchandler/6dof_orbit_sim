@@ -25,4 +25,47 @@ AttitudeStateDot ggradAttitudeDynamics(const AttitudeState& attitude_state, cons
     return AttitudeStateDot{q_dot, alpha};
 }
 
+AttitudeStateDot dragAttitudeDynamics(const AttitudeState& attitude_state,
+                                      const ECIState& eci_state,
+                                      const Vec3& center_of_mass,
+                                      Mat3& inertia_tensor,
+                                      Mat3& inertia_tensor_inv,
+                                      Real Cd, Real area) {
+
+    Real rho = 1e-10; // Placeholder - replace with actual atmosphere model
+    
+    Real v_rel = eci_state.velocity.norm();
+
+    Vec3 force_eci = -0.5 * rho * Cd * area * v_rel * eci_state.velocity.normalized();
+    Vec3 force_body = attitude_state.q.rotate(force_eci);
+    Vec3 torque = (-center_of_mass).cross(force_body);
+
+    Vec3 omega = attitude_state.omega;
+    Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
+
+    Quaternion q_dot = 0.5 * attitude_state.q * Quaternion{0.0, omega.x(), omega.y(), omega.z()};
+
+    return AttitudeStateDot{q_dot, alpha};
+}
+
+AttitudeStateDot srpAttitudeDynamics(const AttitudeState& attitude_state,
+                                     const ECIState& eci_state,
+                                     const Vec3& sun_dir_eci,
+                                     const Vec3& center_of_mass,
+                                     Mat3& inertia_tensor,
+                                     Mat3& inertia_tensor_inv,
+                                     Real Cr, Real area, Real P_srp) {
+
+    Vec3 force_eci = -P_srp * Cr * area * sun_dir_eci;
+    Vec3 force_body = attitude_state.q.rotate(force_eci);
+    Vec3 torque = (-center_of_mass).cross(force_body);
+
+    Vec3 omega = attitude_state.omega;
+    Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
+
+    Quaternion q_dot = 0.5 * attitude_state.q * Quaternion{0.0, omega.x(), omega.y(), omega.z()};
+
+    return AttitudeStateDot{q_dot, alpha};
+}
+
 } // namespace orb
