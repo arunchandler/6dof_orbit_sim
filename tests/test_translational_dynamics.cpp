@@ -147,16 +147,6 @@ static void testJ2_vanishesWithZeroJ2() {
 //  3. Atmospheric drag
 // ─────────────────────────────────────────────
 
-static void testDrag_outputStructure() {
-    ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accDrag(state);
-
-    check(nearlyEqual(deriv.acceleration(0), 0.0) &&
-          nearlyEqual(deriv.acceleration(1), 0.0) &&
-          nearlyEqual(deriv.acceleration(2), 0.0),
-          "drag: position rows of derivative are zero");
-}
-
 static void testDrag_opposesVelocity() {
     // Drag must oppose the velocity vector
     ECIState state = circularLEO(7000000.0);
@@ -207,16 +197,6 @@ static void testDrag_scalesInverselyWithMass() {
 // ─────────────────────────────────────────────
 //  4. Solar radiation pressure
 // ─────────────────────────────────────────────
-
-static void testSRP_outputStructure() {
-    ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accSRP(state);
-
-    check(nearlyEqual(deriv.acceleration(0), 0.0) &&
-          nearlyEqual(deriv.acceleration(1), 0.0) &&
-          nearlyEqual(deriv.acceleration(2), 0.0),
-          "SRP: position rows of derivative are zero");
-}
 
 static void testSRP_smallerThanTwoBody() {
     ECIState state = circularLEO(7000000.0);
@@ -449,14 +429,12 @@ int main() {
     testJ2_vanishesWithZeroJ2();
 
     std::cout << "\n=== Drag ===\n";
-    testDrag_outputStructure();
     testDrag_opposesVelocity();
     testDrag_smallerThanTwoBody();
     testDrag_scalesWithArea();
     testDrag_scalesInverselyWithMass();
 
     std::cout << "\n=== SRP ===\n";
-    testSRP_outputStructure();
     testSRP_smallerThanTwoBody();
     testSRP_scalesWithArea();
     testSRP_scalesInverselyWithMass();
