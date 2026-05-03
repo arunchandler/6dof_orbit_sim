@@ -7,8 +7,10 @@ namespace orb {
 // Scalar and vector aliases
 typedef double Real;
 typedef Eigen::Matrix<Real, 3, 1> Vec3;
+typedef Eigen::Matrix<Real, 4, 1> Vec4;
 typedef Eigen::Matrix<Real, 6, 1> Vec6;
 typedef Eigen::Matrix<Real, 3, 3> Mat3;
+typedef Eigen::Matrix<Real, 4, 4> Mat4;
 
 // Physical constants (WGS-84 / standard)
 namespace constants {

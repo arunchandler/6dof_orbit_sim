@@ -1,4 +1,3 @@
-- Implement 6DoFState struct & dynamics
 - Implement attitude force models
 - Test propagation with SSO
 - Implement Sun centered inertial frame

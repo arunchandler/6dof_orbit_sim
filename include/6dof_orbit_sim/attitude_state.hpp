@@ -31,6 +31,9 @@ struct Quaternion {
 
     Real norm() const noexcept { return std::sqrt(w*w + x*x + y*y + z*z); }
 
+    Quaternion operator*(Real s) const noexcept { return {w*s, x*s, y*s, z*s}; }
+    friend Quaternion operator*(Real s, const Quaternion& q) noexcept { return q * s; }
+
 };
 
 struct AttitudeState {
