@@ -3,3 +3,9 @@ target_link_libraries(test_state_conversions PRIVATE 6dof_orbit_sim)
 
 add_executable(test_translational_dynamics test_translational_dynamics.cpp)
 target_link_libraries(test_translational_dynamics PRIVATE 6dof_orbit_sim)
+
+add_executable(test_attitude_dynamics test_attitude_dynamics.cpp)
+target_link_libraries(test_attitude_dynamics PRIVATE 6dof_orbit_sim)
+
+add_executable(test_6dof_dynamics test_6dof_dynamics.cpp)
+target_link_libraries(test_6dof_dynamics PRIVATE 6dof_orbit_sim)

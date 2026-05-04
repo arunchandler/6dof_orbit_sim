@@ -77,6 +77,13 @@ build CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o: CXX_COMPILER__6
   OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir
   OBJECT_FILE_DIR = CMakeFiles/6dof_orbit_sim.dir/src
 
+build CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o: CXX_COMPILER__6dof_orbit_sim_unscanned_Debug /Users/arunchandler/Projects/6dof_orbit_sim/src/6dof_dynamics.cpp || cmake_object_order_depends_target_6dof_orbit_sim
+  DEP_FILE = CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o.d
+  FLAGS = -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  INCLUDES = -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3
+  OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir
+  OBJECT_FILE_DIR = CMakeFiles/6dof_orbit_sim.dir/src
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target 6dof_orbit_sim
@@ -85,7 +92,7 @@ build CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o: CXX_COMPILER__6
 #############################################
 # Link the static library lib6dof_orbit_sim.a
 
-build lib6dof_orbit_sim.a: CXX_STATIC_LIBRARY_LINKER__6dof_orbit_sim_Debug CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/elements.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o
+build lib6dof_orbit_sim.a: CXX_STATIC_LIBRARY_LINKER__6dof_orbit_sim_Debug CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/elements.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o
   ARCH_FLAGS = -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir
@@ -189,6 +196,72 @@ build tests/test_translational_dynamics: CXX_EXECUTABLE_LINKER__test_translation
   TARGET_FILE = tests/test_translational_dynamics
   TARGET_PDB = test_translational_dynamics.dbg
 
+# =============================================================================
+# Object build statements for EXECUTABLE target test_attitude_dynamics
+
+
+#############################################
+# Order-only phony target for test_attitude_dynamics
+
+build cmake_object_order_depends_target_test_attitude_dynamics: phony || cmake_object_order_depends_target_6dof_orbit_sim
+
+build tests/CMakeFiles/test_attitude_dynamics.dir/test_attitude_dynamics.cpp.o: CXX_COMPILER__test_attitude_dynamics_unscanned_Debug /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_attitude_dynamics.cpp || cmake_object_order_depends_target_test_attitude_dynamics
+  DEP_FILE = tests/CMakeFiles/test_attitude_dynamics.dir/test_attitude_dynamics.cpp.o.d
+  FLAGS = -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  INCLUDES = -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3
+  OBJECT_DIR = tests/CMakeFiles/test_attitude_dynamics.dir
+  OBJECT_FILE_DIR = tests/CMakeFiles/test_attitude_dynamics.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_attitude_dynamics
+
+
+#############################################
+# Link the executable tests/test_attitude_dynamics
+
+build tests/test_attitude_dynamics: CXX_EXECUTABLE_LINKER__test_attitude_dynamics_Debug tests/CMakeFiles/test_attitude_dynamics.dir/test_attitude_dynamics.cpp.o | lib6dof_orbit_sim.a || lib6dof_orbit_sim.a
+  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  LINK_LIBRARIES = lib6dof_orbit_sim.a
+  OBJECT_DIR = tests/CMakeFiles/test_attitude_dynamics.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = tests/test_attitude_dynamics
+  TARGET_PDB = test_attitude_dynamics.dbg
+
+# =============================================================================
+# Object build statements for EXECUTABLE target test_6dof_dynamics
+
+
+#############################################
+# Order-only phony target for test_6dof_dynamics
+
+build cmake_object_order_depends_target_test_6dof_dynamics: phony || cmake_object_order_depends_target_6dof_orbit_sim
+
+build tests/CMakeFiles/test_6dof_dynamics.dir/test_6dof_dynamics.cpp.o: CXX_COMPILER__test_6dof_dynamics_unscanned_Debug /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_6dof_dynamics.cpp || cmake_object_order_depends_target_test_6dof_dynamics
+  DEP_FILE = tests/CMakeFiles/test_6dof_dynamics.dir/test_6dof_dynamics.cpp.o.d
+  FLAGS = -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  INCLUDES = -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3
+  OBJECT_DIR = tests/CMakeFiles/test_6dof_dynamics.dir
+  OBJECT_FILE_DIR = tests/CMakeFiles/test_6dof_dynamics.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target test_6dof_dynamics
+
+
+#############################################
+# Link the executable tests/test_6dof_dynamics
+
+build tests/test_6dof_dynamics: CXX_EXECUTABLE_LINKER__test_6dof_dynamics_Debug tests/CMakeFiles/test_6dof_dynamics.dir/test_6dof_dynamics.cpp.o | lib6dof_orbit_sim.a || lib6dof_orbit_sim.a
+  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  LINK_LIBRARIES = lib6dof_orbit_sim.a
+  OBJECT_DIR = tests/CMakeFiles/test_6dof_dynamics.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = tests/test_6dof_dynamics
+  TARGET_PDB = test_6dof_dynamics.dbg
+
 
 #############################################
 # Utility command for edit_cache
@@ -218,6 +291,10 @@ build tests/rebuild_cache: phony tests/CMakeFiles/rebuild_cache.util
 
 build 6dof_orbit_sim: phony lib6dof_orbit_sim.a
 
+build test_6dof_dynamics: phony tests/test_6dof_dynamics
+
+build test_attitude_dynamics: phony tests/test_attitude_dynamics
+
 build test_state_conversions: phony tests/test_state_conversions
 
 build test_translational_dynamics: phony tests/test_translational_dynamics
@@ -237,7 +314,7 @@ build all: phony lib6dof_orbit_sim.a tests/all
 #############################################
 # Folder: /Users/arunchandler/Projects/6dof_orbit_sim/build/tests
 
-build tests/all: phony tests/test_state_conversions tests/test_translational_dynamics
+build tests/all: phony tests/test_state_conversions tests/test_translational_dynamics tests/test_attitude_dynamics tests/test_6dof_dynamics
 
 # =============================================================================
 # Built-in targets

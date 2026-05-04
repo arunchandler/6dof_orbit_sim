@@ -4,7 +4,7 @@
 
 namespace orb {
 
-AttitudeStateDot ggradAttitudeDynamics(const AttitudeState& attitude_state, const ECIState& eci_state, Mat3& inertia_tensor, Mat3& inertia_tensor_inv, Real mu) {
+AttitudeStateDot computeGravGradAttitudeDynamics(const AttitudeState& attitude_state, const ECIState& eci_state, Mat3& inertia_tensor, Mat3& inertia_tensor_inv, Real mu) {
     Real r = eci_state.position.norm();
     Vec3 r_hat_eci = eci_state.position / r;
 
@@ -20,12 +20,12 @@ AttitudeStateDot ggradAttitudeDynamics(const AttitudeState& attitude_state, cons
     Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
 
     // --- Quaternion kinematics: q̇ = 0.5 * q ⊗ [0, ω] ---
-    Quaternion q_dot = 0.5 * attitude_state.q * Quaternion{0.0, omega.x(), omega.y(), omega.z()};
+    QuaternionDot q_dot = quaternion_kinematics(attitude_state.q, omega);
 
     return AttitudeStateDot{q_dot, alpha};
 }
 
-AttitudeStateDot dragAttitudeDynamics(const AttitudeState& attitude_state,
+AttitudeStateDot computeDragAttitudeDynamics(const AttitudeState& attitude_state,
                                       const ECIState& eci_state,
                                       const Vec3& center_of_mass,
                                       Mat3& inertia_tensor,
@@ -43,12 +43,12 @@ AttitudeStateDot dragAttitudeDynamics(const AttitudeState& attitude_state,
     Vec3 omega = attitude_state.omega;
     Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
 
-    Quaternion q_dot = 0.5 * attitude_state.q * Quaternion{0.0, omega.x(), omega.y(), omega.z()};
+    QuaternionDot q_dot = quaternion_kinematics(attitude_state.q, omega);
 
     return AttitudeStateDot{q_dot, alpha};
 }
 
-AttitudeStateDot srpAttitudeDynamics(const AttitudeState& attitude_state,
+AttitudeStateDot computeSRPAttitudeDynamics(const AttitudeState& attitude_state,
                                      const ECIState& eci_state,
                                      const Vec3& sun_dir_eci,
                                      const Vec3& center_of_mass,
@@ -63,9 +63,71 @@ AttitudeStateDot srpAttitudeDynamics(const AttitudeState& attitude_state,
     Vec3 omega = attitude_state.omega;
     Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
 
-    Quaternion q_dot = 0.5 * attitude_state.q * Quaternion{0.0, omega.x(), omega.y(), omega.z()};
+    QuaternionDot q_dot = quaternion_kinematics(attitude_state.q, omega);
 
     return AttitudeStateDot{q_dot, alpha};
+}
+
+AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_state,
+                             const ECIState& eci_state,
+                             Mat3& inertia_tensor,
+                             Mat3& inertia_tensor_inv,
+                             const TorqueModelConfig& config,
+                             Real mu) {
+
+    QuaternionDot q_dot;
+    q_dot.w = 0.0;
+    q_dot.x = 0.0;
+    q_dot.y = 0.0;
+    q_dot.z = 0.0;
+    Vec3 omega_dot = Vec3::Zero();
+
+    if (config.useGravityGradient) {
+        AttitudeStateDot x = computeGravGradAttitudeDynamics(
+            attitude_state,
+            eci_state,
+            inertia_tensor,
+            inertia_tensor_inv,
+            mu
+        );
+
+        q_dot     += x.q_dot;
+        omega_dot += x.omega_dot;
+    }
+
+    if (config.useDrag) {
+        AttitudeStateDot x = computeDragAttitudeDynamics(
+            attitude_state,
+            eci_state,
+            config.center_of_mass,
+            inertia_tensor,
+            inertia_tensor_inv,
+            config.Cd,
+            config.area
+        );
+
+        q_dot     += x.q_dot;
+        omega_dot += x.omega_dot;
+    }
+
+    if (config.useSRP) {
+        AttitudeStateDot x = computeSRPAttitudeDynamics(
+            attitude_state,
+            eci_state,
+            config.sun_dir_eci,
+            config.center_of_mass,
+            inertia_tensor,
+            inertia_tensor_inv,
+            config.Cr,
+            config.area,
+            config.P_srp
+        );
+
+        q_dot     += x.q_dot;
+        omega_dot += x.omega_dot;
+    }
+
+    return AttitudeStateDot{q_dot, omega_dot};
 }
 
 } // namespace orb

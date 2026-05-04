@@ -39,7 +39,7 @@ static void testTwoBody_magnitude() {
     // For circular orbit, |a| = mu/r²
     Real r_mag  = 7000000.0;
     ECIState state  = circularLEO(r_mag);
-    ECIStateDot deriv  = accTwoBody(state);
+    ECIStateDot deriv  = compute2BodyTranslationalDynamics(state);
 
     Vec3 acc    = deriv.acceleration;
     Real a_mag  = acc.norm();
@@ -52,7 +52,7 @@ static void testTwoBody_magnitude() {
 static void testTwoBody_direction() {
     // Acceleration must point toward origin (anti-parallel to r)
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accTwoBody(state);
+    ECIStateDot deriv = compute2BodyTranslationalDynamics(state);
 
     Vec3 r_hat = state.position.normalized();
     Vec3 a_hat = deriv.acceleration.normalized();
@@ -67,7 +67,7 @@ static void testTwoBody_energyConservation() {
     // In two-body, specific energy E = v²/2 - mu/r is constant.
     // Check the time derivative dE/dt = v·a - mu*(r·v)/r³ = 0
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accTwoBody(state);
+    ECIStateDot deriv = compute2BodyTranslationalDynamics(state);
     Vec3  r     = state.position;
     Vec3  v     = state.velocity;
     Vec3  a     = deriv.acceleration;
@@ -82,8 +82,8 @@ static void testTwoBody_customMu() {
     // Doubling mu should double the acceleration magnitude
     Real r_mag  = 7000000.0;
     ECIState state  = circularLEO(r_mag);
-    ECIStateDot d1     = accTwoBody(state, constants::MU_EARTH);
-    ECIStateDot d2     = accTwoBody(state, 2.0 * constants::MU_EARTH);
+    ECIStateDot d1     = compute2BodyTranslationalDynamics(state, constants::MU_EARTH);
+    ECIStateDot d2     = compute2BodyTranslationalDynamics(state, 2.0 * constants::MU_EARTH);
 
     Real ratio  = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 2.0, 1e-9),
@@ -97,8 +97,8 @@ static void testTwoBody_customMu() {
 static void testJ2_smallerThanTwoBody() {
     // J2 perturbation should be ~1000x smaller than two-body
     ECIState state  = circularLEO(7000000.0);
-    Real a_2b   = accTwoBody(state).acceleration.norm();
-    Real a_j2   = accJ2(state).acceleration.norm();
+    Real a_2b   = compute2BodyTranslationalDynamics(state).acceleration.norm();
+    Real a_j2   = computeJ2TranslationalDynamics(state, constants::MU_EARTH, constants::J2, constants::R_EARTH).acceleration.norm();
 
     check(a_j2 < a_2b * 1e-2,
           "J2: perturbation is at least 100x smaller than two-body");
@@ -111,7 +111,7 @@ static void testJ2_equatorialSymmetry() {
     state.position << r, 0.0, 0.0;
     state.velocity << 0.0, std::sqrt(constants::MU_EARTH / r), 0.0;
 
-    ECIStateDot deriv = accJ2(state);
+    ECIStateDot deriv = computeJ2TranslationalDynamics(state, constants::MU_EARTH, constants::J2, constants::R_EARTH);
     check(nearlyEqual(deriv.acceleration(2), 0.0, 1e-6),
           "J2: no z-acceleration for equatorial orbit");
 }
@@ -128,8 +128,8 @@ static void testJ2_polarEnhancement() {
     pol_state.position << 0.0, 0.0, r;
     pol_state.velocity << 0.0, 0.0, 0.0;
 
-    Real a_eq  = accJ2(eq_state).acceleration.norm();
-    Real a_pol = accJ2(pol_state).acceleration.norm();
+    Real a_eq  = computeJ2TranslationalDynamics(eq_state, constants::MU_EARTH, constants::J2, constants::R_EARTH).acceleration.norm();
+    Real a_pol = computeJ2TranslationalDynamics(pol_state, constants::MU_EARTH, constants::J2, constants::R_EARTH).acceleration.norm();
 
     check(a_pol > a_eq,
           "J2: radial acceleration is stronger at poles than equator");
@@ -137,7 +137,7 @@ static void testJ2_polarEnhancement() {
 
 static void testJ2_vanishesWithZeroJ2() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accJ2(state, constants::MU_EARTH, 0.0, constants::R_EARTH);
+    ECIStateDot deriv = computeJ2TranslationalDynamics(state, constants::MU_EARTH, 0.0, constants::R_EARTH);
 
     check(nearlyEqual(deriv.acceleration.norm(), 0.0, 1e-12),
           "J2: acceleration is zero when J2 = 0");
@@ -150,7 +150,7 @@ static void testJ2_vanishesWithZeroJ2() {
 static void testDrag_opposesVelocity() {
     // Drag must oppose the velocity vector
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv = accDrag(state);
+    ECIStateDot deriv = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
 
     Vec3 v_hat = state.velocity.normalized();
     Vec3 a_hat = deriv.acceleration.normalized();
@@ -162,8 +162,8 @@ static void testDrag_opposesVelocity() {
 
 static void testDrag_smallerThanTwoBody() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv_2b = accTwoBody(state);
-    ECIStateDot deriv_drag = accDrag(state);
+    ECIStateDot deriv_2b = compute2BodyTranslationalDynamics(state);
+    ECIStateDot deriv_drag = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
 
     Real a_2b = deriv_2b.acceleration.norm();
     Real a_drag = deriv_drag.acceleration.norm();
@@ -175,8 +175,8 @@ static void testDrag_smallerThanTwoBody() {
 static void testDrag_scalesWithArea() {
     // Doubling area should double drag acceleration
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = accDrag(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
-    ECIStateDot d2    = accDrag(state, constants::MU_EARTH, 2.2, 2.0, 100.0);
+    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
+    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 2.0, 100.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 2.0, 1e-6),
@@ -186,8 +186,8 @@ static void testDrag_scalesWithArea() {
 static void testDrag_scalesInverselyWithMass() {
     // Doubling mass should halve drag acceleration
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = accDrag(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
-    ECIStateDot d2    = accDrag(state, constants::MU_EARTH, 2.2, 1.0, 200.0);
+    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
+    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 200.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 0.5, 1e-6),
@@ -200,8 +200,8 @@ static void testDrag_scalesInverselyWithMass() {
 
 static void testSRP_smallerThanTwoBody() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot deriv_2b = accTwoBody(state);
-    ECIStateDot deriv_srp = accSRP(state);
+    ECIStateDot deriv_2b = compute2BodyTranslationalDynamics(state);
+    ECIStateDot deriv_srp = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
 
     Real a_2b = deriv_2b.acceleration.norm();
     Real a_srp = deriv_srp.acceleration.norm();
@@ -212,8 +212,8 @@ static void testSRP_smallerThanTwoBody() {
 
 static void testSRP_scalesWithArea() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = accSRP(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
-    ECIStateDot d2    = accSRP(state, constants::MU_EARTH, 1.5, 2.0, 100.0);
+    ECIStateDot d1    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
+    ECIStateDot d2    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 2.0, 100.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 2.0, 1e-6),
@@ -222,8 +222,8 @@ static void testSRP_scalesWithArea() {
 
 static void testSRP_scalesInverselyWithMass() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = accSRP(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
-    ECIStateDot d2    = accSRP(state, constants::MU_EARTH, 1.5, 1.0, 200.0);
+    ECIStateDot d1    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
+    ECIStateDot d2    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 200.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 0.5, 1e-6),
@@ -242,12 +242,12 @@ static void testTotal_twoBodyOnly() {
     cfg.useSRP  = false;
 
     ECIState state  = circularLEO(7000000.0);
-    ECIStateDot d_2b   = accTwoBody(state);
-    ECIStateDot d_tot  = accTotal(state, cfg);
+    ECIStateDot d_2b   = compute2BodyTranslationalDynamics(state);
+    ECIStateDot d_tot  = computeTotalTranslationalDynamics(state, cfg);
 
     Real diff = (d_tot.acceleration - d_2b.acceleration).norm();
     check(nearlyEqual(diff, 0.0, 1e-9),
-          "total: two-body-only config matches accTwoBody exactly");
+          "total: two-body-only config matches compute2BodyTranslationalDynamics exactly");
 }
 
 static void testTotal_j2AddsToTwoBody() {
@@ -256,8 +256,8 @@ static void testTotal_j2AddsToTwoBody() {
     cfg_j2.useJ2    = true;   cfg_j2.useDrag    = false;  cfg_j2.useSRP    = false;
 
     ECIState state   = circularLEO(7000000.0);
-    ECIStateDot d_no_j2 = accTotal(state, cfg_no_j2);
-    ECIStateDot d_j2    = accTotal(state, cfg_j2);
+    ECIStateDot d_no_j2 = computeTotalTranslationalDynamics(state, cfg_no_j2);
+    ECIStateDot d_j2    = computeTotalTranslationalDynamics(state, cfg_j2);
 
     Real a_no_j2 = d_no_j2.acceleration.norm();
     Real a_j2    = d_j2.acceleration.norm();
@@ -274,7 +274,7 @@ static void testTotal_dragReducesEnergy() {
     cfg.useSRP  = false;
 
     ECIState state  = circularLEO(7000000.0);
-    ECIStateDot deriv  = accTotal(state, cfg);
+    ECIStateDot deriv  = computeTotalTranslationalDynamics(state, cfg);
     Vec3 v_hat  = state.velocity.normalized();
     Real along_v = deriv.acceleration.dot(v_hat);
 
@@ -290,7 +290,7 @@ static void testTotal_allModels() {
     cfg.useSRP  = true;
 
     ECIState state  = circularLEO(7000000.0);
-    ECIStateDot deriv  = accTotal(state, cfg);
+    ECIStateDot deriv  = computeTotalTranslationalDynamics(state, cfg);
     Real a_mag  = deriv.acceleration.norm();
 
     check(a_mag > 0.0,
@@ -315,7 +315,7 @@ static void testGVE_twoBodyOnly_keplerian() {
     oe.aop  = 0.3;
     oe.ta   = 0.4;
 
-    OrbitalElements dot = dynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
     check(nearlyEqual(dot.sma,  0.0, 1e-9) &&
           nearlyEqual(dot.ecc,  0.0, 1e-9) &&
@@ -339,7 +339,7 @@ static void testGVE_circularOrbit_noNaNs() {
     oe.aop  = 0.0;
     oe.ta   = 1.0;
 
-    OrbitalElements dot = dynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
     check(std::isfinite(dot.sma) &&
           std::isfinite(dot.ecc) &&
@@ -365,7 +365,7 @@ static void testGVE_equatorialOrbit_noNaNs() {
     oe.aop  = 0.3;
     oe.ta   = 0.5;
 
-    OrbitalElements dot = dynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
     check(std::isfinite(dot.raan),
           "GVE: equatorial orbit RAAN derivative is finite");
@@ -385,7 +385,7 @@ static void testGVE_drag_reducesSMA() {
     oe.aop  = 0.0;
     oe.ta   = 0.0;
 
-    OrbitalElements dot = dynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
     check(dot.sma < 0.0,
           "GVE: drag decreases semi-major axis");
@@ -405,7 +405,7 @@ static void testGVE_J2_affectsRAAN() {
     oe.aop  = 0.3;
     oe.ta   = 0.4;
 
-    OrbitalElements dot = dynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
     check(std::fabs(dot.raan) > 0.0,
           "GVE: J2 produces nodal precession (RAAN rate nonzero)");

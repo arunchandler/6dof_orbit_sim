@@ -1,5 +1,4 @@
-- Implement attitude force models
-- implement sun direction
+- Implement propagator methods
 - Test propagation with SSO (translational, then attitude)
-- Implement control torque with reaction wheel, magnetorquer, thruster models to always face sun
+- Implement control torque with reaction wheel, magnetorquer, thruster models to always face sun (unit x for simplicity)
 - Review Lachy's email for next steps

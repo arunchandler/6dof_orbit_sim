@@ -3,5 +3,7 @@
 /Users/arunchandler/Projects/6dof_orbit_sim/build/CMakeFiles/rebuild_cache.dir
 /Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/test_state_conversions.dir
 /Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/test_translational_dynamics.dir
+/Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/test_attitude_dynamics.dir
+/Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/test_6dof_dynamics.dir
 /Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/edit_cache.dir
 /Users/arunchandler/Projects/6dof_orbit_sim/build/tests/CMakeFiles/rebuild_cache.dir

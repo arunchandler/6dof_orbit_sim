@@ -25,6 +25,12 @@
 },
 {
   "directory": "/Users/arunchandler/Projects/6dof_orbit_sim/build",
+  "command": "/usr/bin/clang++ -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3 -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -o CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o -c /Users/arunchandler/Projects/6dof_orbit_sim/src/6dof_dynamics.cpp",
+  "file": "/Users/arunchandler/Projects/6dof_orbit_sim/src/6dof_dynamics.cpp",
+  "output": "CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o"
+},
+{
+  "directory": "/Users/arunchandler/Projects/6dof_orbit_sim/build",
   "command": "/usr/bin/clang++ -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3 -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -o tests/CMakeFiles/test_state_conversions.dir/test_state_conversions.cpp.o -c /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_state_conversions.cpp",
   "file": "/Users/arunchandler/Projects/6dof_orbit_sim/tests/test_state_conversions.cpp",
   "output": "tests/CMakeFiles/test_state_conversions.dir/test_state_conversions.cpp.o"
@@ -34,5 +40,17 @@
   "command": "/usr/bin/clang++ -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3 -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -o tests/CMakeFiles/test_translational_dynamics.dir/test_translational_dynamics.cpp.o -c /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_translational_dynamics.cpp",
   "file": "/Users/arunchandler/Projects/6dof_orbit_sim/tests/test_translational_dynamics.cpp",
   "output": "tests/CMakeFiles/test_translational_dynamics.dir/test_translational_dynamics.cpp.o"
+},
+{
+  "directory": "/Users/arunchandler/Projects/6dof_orbit_sim/build",
+  "command": "/usr/bin/clang++ -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3 -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -o tests/CMakeFiles/test_attitude_dynamics.dir/test_attitude_dynamics.cpp.o -c /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_attitude_dynamics.cpp",
+  "file": "/Users/arunchandler/Projects/6dof_orbit_sim/tests/test_attitude_dynamics.cpp",
+  "output": "tests/CMakeFiles/test_attitude_dynamics.dir/test_attitude_dynamics.cpp.o"
+},
+{
+  "directory": "/Users/arunchandler/Projects/6dof_orbit_sim/build",
+  "command": "/usr/bin/clang++ -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3 -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk -o tests/CMakeFiles/test_6dof_dynamics.dir/test_6dof_dynamics.cpp.o -c /Users/arunchandler/Projects/6dof_orbit_sim/tests/test_6dof_dynamics.cpp",
+  "file": "/Users/arunchandler/Projects/6dof_orbit_sim/tests/test_6dof_dynamics.cpp",
+  "output": "tests/CMakeFiles/test_6dof_dynamics.dir/test_6dof_dynamics.cpp.o"
 }
 ]

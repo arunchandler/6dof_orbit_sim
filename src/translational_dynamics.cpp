@@ -4,7 +4,7 @@
 
 namespace orb {
 
-ECIStateDot accTwoBody(const ECIState& state, Real mu) {
+ECIStateDot compute2BodyTranslationalDynamics(const ECIState& state, Real mu) {
     const Vec3 r_vec = state.position;
     const Real r = r_vec.norm();
     if (r == 0.0)
@@ -16,7 +16,7 @@ ECIStateDot accTwoBody(const ECIState& state, Real mu) {
     return derivative;
 }
 
-ECIStateDot accJ2(const ECIState& state, Real mu, Real J2, Real R) {
+ECIStateDot computeJ2TranslationalDynamics(const ECIState& state, Real mu, Real J2, Real R) {
     const Vec3 r_vec = state.position;
     const Real r = r_vec.norm();
     if (r == 0.0)
@@ -35,7 +35,7 @@ ECIStateDot accJ2(const ECIState& state, Real mu, Real J2, Real R) {
 }
 
 // Simple exponential atmosphere model for drag force
-ECIStateDot accDrag(const ECIState& state, Real mu, Real Cd, Real A, Real m) {
+ECIStateDot computeDragTranslationalDynamics(const ECIState& state, Real mu, Real Cd, Real A, Real m) {
     const Vec3 r_vec = state.position;
     const Vec3 v_vec = state.velocity;
 
@@ -56,7 +56,7 @@ ECIStateDot accDrag(const ECIState& state, Real mu, Real Cd, Real A, Real m) {
     return derivative;
 }
 
-ECIStateDot accSRP(const ECIState& state, Real mu, Real Cr, Real A, Real m) {
+ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu, Real Cr, Real A, Real m) {
     const Vec3 r_vec = state.position;
 
     const Real r = r_vec.norm();
@@ -72,18 +72,18 @@ ECIStateDot accSRP(const ECIState& state, Real mu, Real Cr, Real A, Real m) {
     return derivative;
 }
 
-ECIStateDot accTotal(const ECIState& state, const ForceModelConfig& config) {
-    ECIStateDot totalAcc = accTwoBody(state, constants::MU_EARTH);
+ECIStateDot computeTotalTranslationalDynamics(const ECIState& state, const ForceModelConfig& config) {
+    ECIStateDot totalAcc = compute2BodyTranslationalDynamics(state, constants::MU_EARTH);
     if (config.useJ2)
-        totalAcc.acceleration += accJ2(state, constants::MU_EARTH, constants::J2, constants::R_EARTH).acceleration;
+        totalAcc.acceleration += computeJ2TranslationalDynamics(state, constants::MU_EARTH, constants::J2, constants::R_EARTH).acceleration;
     if (config.useDrag)
-        totalAcc.acceleration += accDrag(state, constants::MU_EARTH, config.Cd, config.A, config.m).acceleration;
+        totalAcc.acceleration += computeDragTranslationalDynamics(state, constants::MU_EARTH, config.Cd, config.A, config.m).acceleration;
     if (config.useSRP)
-        totalAcc.acceleration += accSRP(state, constants::MU_EARTH, config.Cr, config.A, config.m).acceleration;
+        totalAcc.acceleration += computeSRPTranslationalDynamics(state, constants::MU_EARTH, config.Cr, config.A, config.m).acceleration;
     return totalAcc;
 }
 
-OrbitalElements dynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& config, Real mu) {
+OrbitalElements computeDynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& config, Real mu) {
 
     // ── 1. Convert elements → ECI state ──────────────────────────────────────
     ECIState state   = elementsToECI(oe, mu);
@@ -92,8 +92,8 @@ OrbitalElements dynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& c
 
     // ── 2. Isolate perturbing acceleration in ECI ─────────────────────────────
     // Total minus two-body leaves only the perturbations
-    Vec3 a_total = accTotal(state, config).acceleration;
-    Vec3 a_2b    = accTwoBody(state, mu).acceleration;
+    Vec3 a_total = computeTotalTranslationalDynamics(state, config).acceleration;
+    Vec3 a_2b    = compute2BodyTranslationalDynamics(state, mu).acceleration;
     Vec3 a_pert  = a_total - a_2b;
 
     // ── 3. Build RSW frame ────────────────────────────────────────────────────
