@@ -11,6 +11,8 @@ typedef Eigen::Matrix<Real, 4, 1> Vec4;
 typedef Eigen::Matrix<Real, 6, 1> Vec6;
 typedef Eigen::Matrix<Real, 3, 3> Mat3;
 typedef Eigen::Matrix<Real, 4, 4> Mat4;
+using VecX = Eigen::VectorX<Real>;
+using MatX = Eigen::MatrixX<Real>;
 
 // Physical constants (WGS-84 / standard)
 namespace constants {
