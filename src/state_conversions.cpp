@@ -111,4 +111,94 @@ Real meanToEccentric(Real M, Real ecc, Real tol, int maxIter) {
     throw std::runtime_error("Kepler equation did not converge");
 }
 
+TranslationalStateVec packTranslational(const ECIState& s) {
+    TranslationalStateVec x;
+    x.segment<3>(0) = s.position;
+    x.segment<3>(3) = s.velocity;
+    return x;
+}
+
+ECIState unpackTranslational(const TranslationalStateVec& x) {
+    ECIState s;
+    s.position = x.segment<3>(0);
+    s.velocity = x.segment<3>(3);
+    return s;
+}
+
+TranslationalStateVec packTranslationalDot(const ECIStateDot& s) {
+    TranslationalStateVec x;
+    x.segment<3>(0) = s.velocity;
+    x.segment<3>(3) = s.acceleration;
+    return x;
+}
+
+ECIStateDot unpackTranslationalDot(const TranslationalStateVec& x) {
+    ECIStateDot s;
+    s.velocity = x.segment<3>(0);
+    s.acceleration = x.segment<3>(3);
+    return s;
+}
+
+AttitudeStateVec packAttitude(const AttitudeState& s) {
+    AttitudeStateVec x;
+    x(0) = s.q.w;
+    x(1) = s.q.x;
+    x(2) = s.q.y;
+    x(3) = s.q.z;
+    x.segment<3>(4) = s.omega;
+    return x;
+}
+
+AttitudeState unpackAttitude(const AttitudeStateVec& x) {
+    AttitudeState s;
+    s.q = { x(0), x(1), x(2), x(3) };
+    s.omega = x.segment<3>(4);
+    return s;
+}
+
+AttitudeStateVec packAttitudeDot(const AttitudeStateDot& s) {
+    AttitudeStateVec x;
+    x(0) = s.q_dot.w;
+    x(1) = s.q_dot.x;
+    x(2) = s.q_dot.y;
+    x(3) = s.q_dot.z;
+    x.segment<3>(4) = s.omega_dot;
+    return x;
+}
+
+AttitudeStateDot unpackAttitudeDot(const AttitudeStateVec& x) {
+    AttitudeStateDot s;
+    s.q_dot = { x(0), x(1), x(2), x(3) };
+    s.omega_dot = x.segment<3>(4);
+    return s;
+}
+
+SixDoFStateVec pack6DoF(const SixDoFState& s) {
+    SixDoFStateVec x;
+    x.segment<6>(0)  = packTranslational(s.eci);
+    x.segment<7>(6)  = packAttitude(s.attitude);
+    return x;
+}
+
+SixDoFState unpack6DoF(const SixDoFStateVec& x) {
+    SixDoFState s;
+    s.eci = unpackTranslational(x.segment<6>(0));
+    s.attitude = unpackAttitude(x.segment<7>(6));
+    return s;
+}
+
+SixDoFStateVec pack6DoFDot(const SixDoFStateDot& s) {
+    SixDoFStateVec x;
+    x.segment<6>(0)  = packTranslationalDot(s.eci_dot);
+    x.segment<7>(6)  = packAttitudeDot(s.attitude_dot);
+    return x;
+}
+
+SixDoFStateDot unpack6DoFDot(const SixDoFStateVec& x) {
+    SixDoFStateDot s;
+    s.eci_dot = unpackTranslationalDot(x.segment<6>(0));
+    s.attitude_dot = unpackAttitudeDot(x.segment<7>(6));
+    return s;
+}
+
 } // namespace orb

@@ -130,4 +130,16 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
     return AttitudeStateDot{q_dot, omega_dot};
 }
 
+DerivFunc makeAttDeriv(const ECIState& eci_state,
+                        Mat3& inertia,
+                        Mat3& inertia_inv,
+                        const TorqueModelConfig& config) {
+    return [&inertia, &inertia_inv, config, eci_state](Real t, const VecX& state_vec) -> VecX {
+        AttitudeState att = unpackAttitude(state_vec.head<ATTITUDE_STATE_DIM>());
+        AttitudeStateDot dot = computeTotalAttitudeDynamics(att, eci_state,
+                                                             inertia, inertia_inv, config);
+        return packAttitudeDot(dot);
+    };
+}
+
 } // namespace orb

@@ -2,6 +2,7 @@
 #include "types.hpp"
 #include "translational_state.hpp"
 #include "attitude_state.hpp"
+#include "state_conversions.hpp"
 
 namespace orb {
 
@@ -76,5 +77,10 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
                              Mat3& inertia_tensor_inv,
                              const TorqueModelConfig& config,
                              Real mu = constants::MU_EARTH);
+
+DerivFunc makeAttDeriv(const ECIState& eci_state,
+                        Mat3& inertia,
+                        Mat3& inertia_inv,
+                        const TorqueModelConfig& config);
 
 } // namespace orb

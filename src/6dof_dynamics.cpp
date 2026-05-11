@@ -17,4 +17,15 @@ SixDoFStateDot sixDoFDynamics(const SixDoFState& state,
 
 }
 
+DerivFunc makeSixDoFDeriv(Mat3& inertia, Mat3& inertia_inv,
+                           const ForceModelConfig& force_config,
+                           const TorqueModelConfig& torque_config) {
+    return [&](Real t, const VecX& state_vec) -> VecX {
+        SixDoFState state = unpack6DoF(state_vec);
+        SixDoFStateDot dot = sixDoFDynamics(state, inertia, inertia_inv,
+                                             force_config, torque_config);
+        return pack6DoFDot(dot);
+    };
+}
+
 } // namespace orb

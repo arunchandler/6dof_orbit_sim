@@ -62,4 +62,6 @@ ECIStateDot computeTotalTranslationalDynamics(const ECIState& state, const Force
 /// @return  Time derivative of orbital elements [sma_dot, ecc_dot, inc_dot, raan_dot, aop_dot, ta_dot]
 OrbitalElements computeDynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& config, Real mu = constants::MU_EARTH);
 
+DerivFunc makeECIDeriv(const ForceModelConfig& config);
+
 } // namespace orb

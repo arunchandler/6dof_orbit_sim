@@ -17,4 +17,8 @@ namespace orb {
 /// @return Time derivative of the full 6DoF state (position_dot, velocity_dot, q_dot, omega_dot)
 SixDoFStateDot sixDoFDynamics(const SixDoFState& state, Mat3& inertia_tensor, Mat3& inertia_tensor_inv, const ForceModelConfig& force_config, const TorqueModelConfig& torque_config);
 
+DerivFunc makeSixDoFDeriv(Mat3& inertia, Mat3& inertia_inv,
+                           const ForceModelConfig& force_config,
+                           const TorqueModelConfig& torque_config);
+
 } // namespace orb

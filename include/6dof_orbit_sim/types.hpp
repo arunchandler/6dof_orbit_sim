@@ -14,6 +14,16 @@ typedef Eigen::Matrix<Real, 4, 4> Mat4;
 using VecX = Eigen::VectorX<Real>;
 using MatX = Eigen::MatrixX<Real>;
 
+static constexpr int TRANLATIONAL_STATE_DIM = 6;
+static constexpr int ATTITUDE_STATE_DIM = 7; // 4 for quaternion + 3 for angular velocity
+static constexpr int SIX_DOF_STATE_DIM = TRANLATIONAL_STATE_DIM + ATTITUDE_STATE_DIM; // 13 total
+using TranslationalStateVec  = Eigen::Matrix<Real, TRANLATIONAL_STATE_DIM, 1>;
+using TranslationalStateMat  = Eigen::Matrix<Real, TRANLATIONAL_STATE_DIM, Eigen::Dynamic>;
+using AttitudeStateVec  = Eigen::Matrix<Real, ATTITUDE_STATE_DIM, 1>;
+using AttitudeStateMat  = Eigen::Matrix<Real, ATTITUDE_STATE_DIM, Eigen::Dynamic>;
+using SixDoFStateVec  = Eigen::Matrix<Real, SIX_DOF_STATE_DIM, 1>;
+using SixDoFStateMat  = Eigen::Matrix<Real, SIX_DOF_STATE_DIM, Eigen::Dynamic>;
+
 // Physical constants (WGS-84 / standard)
 namespace constants {
     static const Real MU_EARTH = 3.986004418e14; // m³/s²
@@ -28,5 +38,8 @@ namespace constants {
 inline bool nearlyEqual(Real a, Real b, Real tol = 1e-6) {
     return std::fabs(a - b) < tol;
 }
+
+// derivative function type for ODE solvers
+using DerivFunc = std::function<VecX(Real, const VecX&)>;
 
 } // namespace orb

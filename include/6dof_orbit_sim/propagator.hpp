@@ -1,0 +1,27 @@
+#pragma once
+#include "types.hpp"
+#include "ode_solvers.hpp"
+#include "6dof_state.hpp"
+#include "state_conversions.hpp"
+
+namespace orb {
+    
+SixDoFStateMat propagate6DoF(const SixDoFState& initial_state, Real t0, Real tf, Real dt, DerivFunc deriv_func) {
+    int steps = static_cast<int>((tf - t0) / dt) + 1;
+    SixDoFStateMat states(SIX_DOF_STATE_DIM, steps);
+    states.col(0) = pack6DoF(initial_state);
+    for (int i = 1; i < steps; ++i) {
+        states.col(i) = rk4Step(deriv_func, t0 + (i-1)*dt, states.col(i-1), dt);
+    }
+    return states;
+}
+
+TranslationalStateMat propagateTranslationalState(const ECIState& initial_state, Real t0, Real tf, Real dt, DerivFunc deriv_func) {
+
+}
+
+AttitudeStateMat propagateAttitudeState(const AttitudeState& initial_state, Real t0, Real tf, Real dt, DerivFunc deriv_func) {
+
+}
+
+} // namespace orb
