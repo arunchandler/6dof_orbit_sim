@@ -23,6 +23,8 @@ using AttitudeStateVec  = Eigen::Matrix<Real, ATTITUDE_STATE_DIM, 1>;
 using AttitudeStateMat  = Eigen::Matrix<Real, ATTITUDE_STATE_DIM, Eigen::Dynamic>;
 using SixDoFStateVec  = Eigen::Matrix<Real, SIX_DOF_STATE_DIM, 1>;
 using SixDoFStateMat  = Eigen::Matrix<Real, SIX_DOF_STATE_DIM, Eigen::Dynamic>;
+using OEStateVec = Eigen::Matrix<Real, 6, 1>;
+using OEStateMat = Eigen::Matrix<Real, 6, Eigen::Dynamic>;
 
 // Physical constants (WGS-84 / standard)
 namespace constants {

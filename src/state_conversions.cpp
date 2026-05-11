@@ -201,4 +201,94 @@ SixDoFStateDot unpack6DoFDot(const SixDoFStateVec& x) {
     return s;
 }
 
+OEStateVec packOE(const OrbitalElements& oe){
+    OEStateVec x;
+    x(0) = oe.sma;
+    x(1) = oe.ecc;
+    x(2) = oe.inc;
+    x(3) = oe.raan;
+    x(4) = oe.aop;
+    x(5) = oe.ta;
+    return x;
+}
+
+OrbitalElements unpackOE(const OEStateVec& x){
+    OrbitalElements oe;
+    oe.sma = x(0);
+    oe.ecc = x(1);
+    oe.inc = x(2);
+    oe.raan = x(3);
+    oe.aop = x(4);
+    oe.ta = x(5);
+    return oe;
+}
+
+OEStateVec packOEDot(const OrbitalElementsDot& oe_dot){
+    OEStateVec x;
+    x(0) = oe_dot.sma_dot;
+    x(1) = oe_dot.ecc_dot;
+    x(2) = oe_dot.inc_dot;
+    x(3) = oe_dot.raan_dot;
+    x(4) = oe_dot.aop_dot;
+    x(5) = oe_dot.ta_dot;
+    return x;
+}
+
+OrbitalElementsDot unpackOEDot(const OEStateVec& x){
+    OrbitalElementsDot oe_dot;
+    oe_dot.sma_dot = x(0);
+    oe_dot.ecc_dot = x(1);
+    oe_dot.inc_dot = x(2);
+    oe_dot.raan_dot = x(3);
+    oe_dot.aop_dot = x(4);
+    oe_dot.ta_dot = x(5);
+    return oe_dot;
+}
+
+OEStateMat translationalMatToOEMat(const TranslationalStateMat& states, Real mu) {
+    const Eigen::Index N = states.cols();
+    OEStateMat out(6, N);
+
+    for (Eigen::Index k = 0; k < N; ++k) {
+        ECIState s;
+
+        s.position = states.col(k).segment<3>(0);
+        s.velocity = states.col(k).segment<3>(3);
+
+        OrbitalElements oe = eciToElements(s, mu);
+
+        out(0, k) = oe.sma;
+        out(1, k) = oe.ecc;
+        out(2, k) = oe.inc;
+        out(3, k) = oe.raan;
+        out(4, k) = oe.aop;
+        out(5, k) = oe.ta;
+    }
+
+    return out;
+}
+
+TranslationalStateMat oeMatToTranslationalMat(const OEStateMat& oe_mat, Real mu) {
+    const Eigen::Index N = oe_mat.cols();
+    TranslationalStateMat out(TRANLATIONAL_STATE_DIM, N);
+
+    for (Eigen::Index k = 0; k < N; ++k) {
+        OrbitalElements oe;
+
+        oe.sma  = oe_mat(0, k);
+        oe.ecc  = oe_mat(1, k);
+        oe.inc  = oe_mat(2, k);
+        oe.raan = oe_mat(3, k);
+        oe.aop  = oe_mat(4, k);
+        oe.ta   = oe_mat(5, k);
+
+        ECIState s = elementsToECI(oe, mu);
+
+        out.col(k).segment<3>(0) = s.position;
+        out.col(k).segment<3>(3) = s.velocity;
+    }
+
+    return out;
+}
+
 } // namespace orb

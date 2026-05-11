@@ -23,6 +23,15 @@ struct OrbitalElements {
     }
 };
 
+struct OrbitalElementsDot {
+    Real sma_dot;
+    Real ecc_dot;
+    Real inc_dot;
+    Real raan_dot;
+    Real aop_dot;
+    Real ta_dot;
+};
+
 /// Wrap an angle to [0, 2pi)
 inline Real wrapTwoPI(Real angle) {
     angle = std::fmod(angle, constants::TWO_PI);

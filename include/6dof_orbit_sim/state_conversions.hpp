@@ -50,4 +50,16 @@ SixDoFStateVec pack6DoFDot(const SixDoFStateDot& s);
 
 SixDoFStateDot unpack6DoFDot(const SixDoFStateVec& x);
 
+OEStateVec packOE(const OrbitalElements& oe);
+
+OrbitalElements unpackOE(const OEStateVec& x);
+
+OEStateVec packOEDot(const OrbitalElementsDot& oe_dot);
+
+OrbitalElementsDot unpackOEDot(const OEStateVec& x);
+
+OEStateMat translationalMatToOEMat(const TranslationalStateMat& states, Real mu);
+
+TranslationalStateMat oeMatToTranslationalMat(const OEStateMat& oe_mat, Real mu);
+
 } // namespace orb

@@ -315,14 +315,14 @@ static void testGVE_twoBodyOnly_keplerian() {
     oe.aop  = 0.3;
     oe.ta   = 0.4;
 
-    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElementsDot dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
-    check(nearlyEqual(dot.sma,  0.0, 1e-9) &&
-          nearlyEqual(dot.ecc,  0.0, 1e-9) &&
-          nearlyEqual(dot.inc,  0.0, 1e-9) &&
-          nearlyEqual(dot.raan, 0.0, 1e-9) &&
-          nearlyEqual(dot.aop,  0.0, 1e-9) &&
-          dot.ta > 0.0,
+    check(nearlyEqual(dot.sma_dot,  0.0, 1e-9) &&
+          nearlyEqual(dot.ecc_dot,  0.0, 1e-9) &&
+          nearlyEqual(dot.inc_dot,  0.0, 1e-9) &&
+          nearlyEqual(dot.raan_dot, 0.0, 1e-9) &&
+          nearlyEqual(dot.aop_dot,  0.0, 1e-9) &&
+          dot.ta_dot > 0.0,
           "GVE: elements constant under pure two-body");
 
 }
@@ -339,17 +339,17 @@ static void testGVE_circularOrbit_noNaNs() {
     oe.aop  = 0.0;
     oe.ta   = 1.0;
 
-    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElementsDot dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
-    check(std::isfinite(dot.sma) &&
-          std::isfinite(dot.ecc) &&
-          std::isfinite(dot.inc) &&
-          std::isfinite(dot.raan) &&
-          std::isfinite(dot.aop) &&
-          std::isfinite(dot.ta),
+    check(std::isfinite(dot.sma_dot) &&
+          std::isfinite(dot.ecc_dot) &&
+          std::isfinite(dot.inc_dot) &&
+          std::isfinite(dot.raan_dot) &&
+          std::isfinite(dot.aop_dot) &&
+          std::isfinite(dot.ta_dot),
           "GVE: circular orbit produces finite derivatives");
 
-    check(nearlyEqual(dot.aop, 0.0, 1e-12),
+    check(nearlyEqual(dot.aop_dot, 0.0, 1e-12),
           "GVE: argument of perigee frozen for circular orbit");
 }
 
@@ -365,9 +365,9 @@ static void testGVE_equatorialOrbit_noNaNs() {
     oe.aop  = 0.3;
     oe.ta   = 0.5;
 
-    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElementsDot dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
-    check(std::isfinite(dot.raan),
+    check(std::isfinite(dot.raan_dot),
           "GVE: equatorial orbit RAAN derivative is finite");
 }
 
@@ -385,9 +385,9 @@ static void testGVE_drag_reducesSMA() {
     oe.aop  = 0.0;
     oe.ta   = 0.0;
 
-    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElementsDot dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
-    check(dot.sma < 0.0,
+    check(dot.sma_dot < 0.0,
           "GVE: drag decreases semi-major axis");
 }
 
@@ -405,9 +405,9 @@ static void testGVE_J2_affectsRAAN() {
     oe.aop  = 0.3;
     oe.ta   = 0.4;
 
-    OrbitalElements dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
+    OrbitalElementsDot dot = computeDynamicsGVE(oe, cfg, constants::MU_EARTH);
 
-    check(std::fabs(dot.raan) > 0.0,
+    check(std::fabs(dot.raan_dot) > 0.0,
           "GVE: J2 produces nodal precession (RAAN rate nonzero)");
 }
 

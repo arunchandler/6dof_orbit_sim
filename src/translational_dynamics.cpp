@@ -83,7 +83,7 @@ ECIStateDot computeTotalTranslationalDynamics(const ECIState& state, const Force
     return totalAcc;
 }
 
-OrbitalElements computeDynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& config, Real mu) {
+OrbitalElementsDot computeDynamicsGVE(const OrbitalElements& oe, const ForceModelConfig& config, Real mu) {
 
     // ── 1. Convert elements → ECI state ──────────────────────────────────────
     ECIState state   = elementsToECI(oe, mu);
@@ -122,28 +122,28 @@ OrbitalElements computeDynamicsGVE(const OrbitalElements& oe, const ForceModelCo
                          ? eps_i : std::sin(inc);
 
     // ── 6. Gauss Variational Equations ────────────────────────────────────────
-    OrbitalElements oe_dot;
+    OrbitalElementsDot oe_dot;
 
     // ȧ = (2a²/h) [e sinν f_R + (p/r) f_S]
-    oe_dot.sma = (2.0 * oe.sma * oe.sma / h)
+    oe_dot.sma_dot = (2.0 * oe.sma * oe.sma / h)
                  * (e * std::sin(nu) * f_R + (p / r) * f_S);
 
     // ė = (1/h) [p sinν f_R + ((p+r)cosν + re) f_S]
-    oe_dot.ecc = (1.0 / h)
+    oe_dot.ecc_dot = (1.0 / h)
                  * (p * std::sin(nu) * f_R
                  + ((p + r) * std::cos(nu) + r * e) * f_S);
 
     // i̇ = (r cos(ω+ν) / h) f_W
-    oe_dot.inc = (r * std::cos(aop + nu) / h) * f_W;
+    oe_dot.inc_dot = (r * std::cos(aop + nu) / h) * f_W;
 
     // Ω̇ = (r sin(ω+ν)) / (h sini) f_W
-    oe_dot.raan = (r * std::sin(aop + nu)) / (h * sin_i) * f_W;
+    oe_dot.raan_dot = (r * std::sin(aop + nu)) / (h * sin_i) * f_W;
 
     // ω̇ = (1/he)[-p cosν f_R + (p+r) sinν f_S] - (r sin(ω+ν) cosi)/(h sini) f_W
     if (e < eps_e) {
-        oe_dot.aop = 0.0;   // undefined for circular orbits
+        oe_dot.aop_dot = 0.0;   // undefined for circular orbits
     } else {
-        oe_dot.aop = (1.0 / (h * e))
+        oe_dot.aop_dot = (1.0 / (h * e))
                      * (-p * std::cos(nu) * f_R
                      +  (p + r) * std::sin(nu) * f_S)
                      - (r * std::sin(aop + nu) * std::cos(inc))
@@ -151,9 +151,9 @@ OrbitalElements computeDynamicsGVE(const OrbitalElements& oe, const ForceModelCo
     }
 
     // ν̇ = h/r² + (1/he)[p cosν f_R - (p+r) sinν f_S]
-    oe_dot.ta = h / (r * r);
+    oe_dot.ta_dot = h / (r * r);
     if (e > eps_e) {
-        oe_dot.ta += (1.0 / (h * e))
+        oe_dot.ta_dot += (1.0 / (h * e))
                      * (p * std::cos(nu) * f_R
                      - (p + r) * std::sin(nu) * f_S);
     }
