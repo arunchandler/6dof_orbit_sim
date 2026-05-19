@@ -58,8 +58,8 @@ OEStateVec packOEDot(const OrbitalElementsDot& oe_dot);
 
 OrbitalElementsDot unpackOEDot(const OEStateVec& x);
 
-OEStateMat translationalMatToOEMat(const TranslationalStateMat& states, Real mu);
+OEStateMat translationalMatToOEMat(const TranslationalStateMat& states, Real mu = constants::MU_EARTH);
 
-TranslationalStateMat oeMatToTranslationalMat(const OEStateMat& oe_mat, Real mu);
+TranslationalStateMat oeMatToTranslationalMat(const OEStateMat& oe_mat, Real mu = constants::MU_EARTH);
 
 } // namespace orb

@@ -161,7 +161,7 @@ OrbitalElementsDot computeDynamicsGVE(const OrbitalElements& oe, const ForceMode
     return oe_dot;
 }
 
-DerivFunc makeECIDeriv(const ForceModelConfig& config) {
+DerivFunc makeTranslationalDeriv(const ForceModelConfig& config) {
     return [config](Real t, const VecX& state_vec) -> VecX {
         ECIState state = unpackTranslational(state_vec.head<TRANLATIONAL_STATE_DIM>());
         ECIStateDot dot = computeTotalTranslationalDynamics(state, config);

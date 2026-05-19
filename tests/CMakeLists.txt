@@ -9,3 +9,6 @@ target_link_libraries(test_attitude_dynamics PRIVATE 6dof_orbit_sim)
 
 add_executable(test_6dof_dynamics test_6dof_dynamics.cpp)
 target_link_libraries(test_6dof_dynamics PRIVATE 6dof_orbit_sim)
+
+add_executable(test_orbit_prop test_orbit_prop.cpp)
+target_link_libraries(test_orbit_prop PRIVATE 6dof_orbit_sim)

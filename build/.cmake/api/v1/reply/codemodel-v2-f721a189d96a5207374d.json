@@ -37,7 +37,8 @@
 						1,
 						2,
 						3,
-						4
+						4,
+						5
 					]
 				}
 			],
@@ -57,7 +58,8 @@
 						1,
 						2,
 						3,
-						4
+						4,
+						5
 					]
 				}
 			],
@@ -82,6 +84,13 @@
 					"id" : "test_attitude_dynamics::@a44f0ac069e85531cdee",
 					"jsonFile" : "target-test_attitude_dynamics-Debug-96042756e3a7fb7783e4.json",
 					"name" : "test_attitude_dynamics",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "test_orbit_prop::@a44f0ac069e85531cdee",
+					"jsonFile" : "target-test_orbit_prop-Debug-fce2aa13fc70a7575dff.json",
+					"name" : "test_orbit_prop",
 					"projectIndex" : 0
 				},
 				{

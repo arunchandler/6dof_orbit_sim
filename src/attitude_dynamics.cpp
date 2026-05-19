@@ -38,7 +38,7 @@ AttitudeStateDot computeDragAttitudeDynamics(const AttitudeState& attitude_state
 
     Vec3 force_eci = -0.5 * rho * Cd * area * v_rel * eci_state.velocity.normalized();
     Vec3 force_body = attitude_state.q.rotate(force_eci);
-    Vec3 torque = (-center_of_mass).cross(force_body);
+    Vec3 torque = (-center_of_mass).cross(force_body); //Assumes center of pressure is at origin of body frame
 
     Vec3 omega = attitude_state.omega;
     Vec3 alpha = inertia_tensor_inv * (torque - omega.cross(inertia_tensor * omega));
