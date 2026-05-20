@@ -66,7 +66,7 @@ static void test6DoF_matchesSeparateModels() {
     torque_cfg.useSRP  = false;
     torque_cfg.center_of_mass = Vec3(0.1, 0.0, 0.0);
     torque_cfg.Cd   = 2.2;
-    torque_cfg.area = 1.0;
+    torque_cfg.area = 0.2;
 
     SixDoFStateDot sixdof = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg);
 
@@ -132,7 +132,7 @@ static void test6DoF_attitudeRespondsToTorque() {
     torque_cfg.useSRP  = false;
     torque_cfg.center_of_mass = Vec3(0.1, 0.0, 0.0);
     torque_cfg.Cd   = 2.2;
-    torque_cfg.area = 1.0;
+    torque_cfg.area = 0.2;
 
     auto result = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg);
 

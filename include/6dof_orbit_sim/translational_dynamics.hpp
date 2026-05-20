@@ -24,19 +24,19 @@ ECIStateDot computeJ2TranslationalDynamics(const ECIState& state, Real mu = cons
 /// @param state Current state vector [rx, ry, rz, vx, vy, vz]
 /// @param mu Gravitational parameter (default: Earth's mu)
 /// @param Cd Drag coefficient (default: 2.2)
-/// @param A Reference area (default: 1.0)
+/// @param A Reference area (default: 0.2)
 /// @param m Mass (default: 100.0)
 /// @return  State derivative due to drag force [0, 0, 0, ax, ay, az]
-ECIStateDot computeDragTranslationalDynamics(const ECIState& state, Real mu = constants::MU_EARTH, Real Cd = 2.2, Real A = 1.0, Real m = 100.0);
+ECIStateDot computeDragTranslationalDynamics(const ECIState& state, Real mu = constants::MU_EARTH, Real Cd = 2.2, Real A = 0.2, Real m = 100.0);
 
 /// @brief Solar radiation pressure force.
 /// @param state Current state vector [rx, ry, rz, vx, vy, vz]
 /// @param mu Gravitational parameter (default: Earth's mu)
 /// @param Cr Reflectivity coefficient (default: 1.5)
-/// @param A Reference area (default: 1.0)
+/// @param A Reference area (default: 0.2 m²)
 /// @param m Mass (default: 100.0)
 /// @return  State derivative due to solar radiation pressure [0, 0, 0, ax, ay, az]
-ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu = constants::MU_EARTH, Real Cr = 1.5, Real A = 1.0, Real m = 100.0);
+ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu = constants::MU_EARTH, Real Cr = 1.5, Real A = 0.2, Real m = 100.0);
 
 /// @brief Configuration for selecting which forces to include in the total acceleration calculation.
 struct ForceModelConfig {
@@ -45,7 +45,7 @@ struct ForceModelConfig {
     bool useSRP  = false;
     Real Cd = 2.2;
     Real Cr = 1.5;
-    Real A = 1.0;   // m²
+    Real A = 0.2;   // m²
     Real m = 100.0; // kg
 };
 

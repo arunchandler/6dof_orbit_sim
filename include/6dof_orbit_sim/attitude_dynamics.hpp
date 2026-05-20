@@ -18,7 +18,7 @@ AttitudeStateDot computeGravGradAttitudeDynamics(const AttitudeState& attitude_s
 /// @brief Compute the time derivative of the attitude state from aerodynamic torque
 /// @param attitude_state Current attitude state (quaternion and angular velocity)
 /// @param Cd Drag coefficient (default: 2.2)
-/// @param A Reference area (default: 1.0)
+/// @param A Reference area (default: 0.2 m²)
 /// @param m Mass (default: 100.0)
 /// @return  Time derivative of attitude state (q_dot and omega_dot)
 AttitudeStateDot computeDragAttitudeDynamics(const AttitudeState& attitude_state,
@@ -31,7 +31,7 @@ AttitudeStateDot computeDragAttitudeDynamics(const AttitudeState& attitude_state
 /// @brief Compute the time derivative of the attitude state from solar radiation pressure torque
 /// @param attitude_state Current attitude state (quaternion and angular velocity)
 /// @param Cr Reflectivity coefficient (default: 1.5)
-/// @param A Reference area (default: 1.0)
+/// @param A Reference area (default: 0.2 m²)
 /// @param m Mass (default: 100.0)
 /// @return  Time derivative of attitude state (q_dot and omega_dot)
 AttitudeStateDot computeSRPAttitudeDynamics(const AttitudeState& attitude_state,
@@ -50,7 +50,7 @@ struct TorqueModelConfig {
 
     // Drag parameters
     Real Cd   = 2.2;
-    Real area = 1.0;   // m^2
+    Real area = 0.2;   // m^2
 
     // SRP parameters
     Real Cr    = 1.5;

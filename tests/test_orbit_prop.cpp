@@ -54,7 +54,7 @@ int main() {
 
     //timing parameters
     Real t0 = 0.0;
-    Real tf = 3600; // simulate for one hour
+    Real tf = 24.0 * 3600; // simulate for one hour
     Real dt = 0.1; // time step of 0.1 seconds
     VecX t_vec = Eigen::VectorXd::LinSpaced(static_cast<int>((tf - t0) / dt) + 1, t0, tf);
 

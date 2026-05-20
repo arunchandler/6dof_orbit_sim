@@ -329,7 +329,7 @@ static void testSRP_analyticalMagnitude() {
     // omega_dot_z = τ_z / Iz
     Real P     = 4.56e-6;
     Real Cr    = 1.5;
-    Real area  = 2.0;
+    Real area  = 0.2;
     Real com_y = 0.05;
     Real Iz    = 30.0;
 
@@ -400,8 +400,8 @@ static void testSRP_scalesWithArea() {
     Mat3 I    = diagI(10.0, 20.0, 30.0);
     Mat3 Iinv = diagIinv(10.0, 20.0, 30.0);
 
-    AttitudeStateDot d1 = computeSRPAttitudeDynamics(att, eci, sun_dir, com, I, Iinv, 1.5, 2.0, 4.56e-6);
-    AttitudeStateDot d2 = computeSRPAttitudeDynamics(att, eci, sun_dir, com, I, Iinv, 1.5, 4.0, 4.56e-6);
+    AttitudeStateDot d1 = computeSRPAttitudeDynamics(att, eci, sun_dir, com, I, Iinv, 1.5, 0.2, 4.56e-6);
+    AttitudeStateDot d2 = computeSRPAttitudeDynamics(att, eci, sun_dir, com, I, Iinv, 1.5, 0.4, 4.56e-6);
 
     Real ratio = d2.omega_dot(2) / d1.omega_dot(2);
     check(nearlyEqual(ratio, 2.0, 1e-9),
@@ -487,7 +487,7 @@ static void testTorqueTotal_matchesDragOnly() {
     cfg.useSRP = false;
     cfg.center_of_mass = Vec3(0.1, 0.0, 0.0);
     cfg.Cd = 2.2;
-    cfg.area = 1.0;
+    cfg.area = 0.2;
 
     auto ref = computeDragAttitudeDynamics(att, eci, cfg.center_of_mass, I, Iinv,
                                            cfg.Cd, cfg.area);
@@ -513,7 +513,7 @@ static void testTorqueTotal_matchesSRPOnly() {
     cfg.center_of_mass = Vec3(0.0, 0.05, 0.0);
     cfg.sun_dir_eci = Vec3(1.0, 0.0, 0.0);
     cfg.Cr = 1.5;
-    cfg.area = 2.0;
+    cfg.area = 0.4;
     cfg.P_srp = 4.56e-6;
 
     auto ref = computeSRPAttitudeDynamics(att, eci, cfg.sun_dir_eci,
@@ -542,7 +542,7 @@ static void testTorqueTotal_combinedEqualsSum() {
     cfg.sun_dir_eci = Vec3(1.0, 0.0, 0.0);
     cfg.Cd = 2.2;
     cfg.Cr = 1.5;
-    cfg.area = 2.0;
+    cfg.area = 0.4;
     cfg.P_srp = 4.56e-6;
 
     auto gg  = computeGravGradAttitudeDynamics(att, eci, I, Iinv, 0.0);

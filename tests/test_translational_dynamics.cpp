@@ -175,8 +175,8 @@ static void testDrag_smallerThanTwoBody() {
 static void testDrag_scalesWithArea() {
     // Doubling area should double drag acceleration
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
-    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 2.0, 100.0);
+    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 0.2, 100.0);
+    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 0.4, 100.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 2.0, 1e-6),
@@ -186,8 +186,8 @@ static void testDrag_scalesWithArea() {
 static void testDrag_scalesInverselyWithMass() {
     // Doubling mass should halve drag acceleration
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 100.0);
-    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 1.0, 200.0);
+    ECIStateDot d1    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 0.2, 100.0);
+    ECIStateDot d2    = computeDragTranslationalDynamics(state, constants::MU_EARTH, 2.2, 0.2, 200.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 0.5, 1e-6),
