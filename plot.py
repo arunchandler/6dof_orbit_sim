@@ -43,7 +43,7 @@ ax4.set_xlabel("Timestep"); ax4.set_ylabel("rad/s")
 ax4.legend()
 
 plt.tight_layout()
-plt.savefig("orbit_plot.png", dpi=150)
+plt.savefig("output/orbit_plot.png", dpi=150)
 plt.show()
 
 # Orbital Elements plot
@@ -58,5 +58,5 @@ for i, col in enumerate(df_oe.columns):
     ax.set_title(oe_labels[i])
     ax.set_xlabel("Timestep")
 plt.tight_layout()
-plt.savefig("oe_plot.png", dpi=150)
+plt.savefig("output/oe_plot.png", dpi=150)
 plt.show()

@@ -34,14 +34,14 @@ int main() {
 
     TorqueModelConfig torque_config;
     torque_config.useGravityGradient = false;
-    torque_config.useDrag = false;
+    torque_config.useDrag = true;
     torque_config.useSRP = false;
     torque_config.center_of_mass = Vec3(0.1, 0.05, 0.0);
 
     ForceModelConfig force_config;
-    force_config.useDrag = false;
+    force_config.useDrag = true;
     force_config.useJ2 = true;
-    force_config.useSRP = false;
+    force_config.useSRP = true;
 
     Mat3 inertia_tensor;
     inertia_tensor << 18.5, -0.3,  0.1,
@@ -54,8 +54,8 @@ int main() {
 
     //timing parameters
     Real t0 = 0.0;
-    Real tf = 24.0 * 3600.0; // simulate for one day
-    Real dt = 10.0; // time step of 10 seconds
+    Real tf = 3600; // simulate for one hour
+    Real dt = 0.1; // time step of 0.1 seconds
     VecX t_vec = Eigen::VectorXd::LinSpaced(static_cast<int>((tf - t0) / dt) + 1, t0, tf);
 
     SixDoFStateMat state_history = propagate6DoF(sixdof_init, t0, tf, dt, deriv);

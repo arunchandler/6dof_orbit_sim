@@ -11,7 +11,9 @@ SixDoFStateMat propagate6DoF(const SixDoFState& initial_state, Real t0, Real tf,
     SixDoFStateMat states(SIX_DOF_STATE_DIM, steps);
     states.col(0) = pack6DoF(initial_state);
     for (int i = 1; i < steps; ++i) {
-        states.col(i) = rk4Step(deriv_func, t0 + (i-1)*dt, states.col(i-1), dt);
+        VecX next = rk4Step(deriv_func, t0 + (i-1)*dt, states.col(i-1), dt);
+        next.segment<4>(6).normalize(); // Normalize quaternion part to prevent drift
+        states.col(i) = next;
     }
     return states;
 }
@@ -31,7 +33,9 @@ AttitudeStateMat propagateAttitudeState(const AttitudeState& initial_state, Real
     AttitudeStateMat states(ATTITUDE_STATE_DIM, steps);
     states.col(0) = packAttitude(initial_state);
     for (int i = 1; i < steps; ++i) {
-        states.col(i) = rk4Step(deriv_func, t0 + (i-1)*dt, states.col(i-1), dt);
+        VecX next = rk4Step(deriv_func, t0 + (i-1)*dt, states.col(i-1), dt);
+        next.segment<4>(6).normalize(); // Normalize quaternion part to prevent drift
+        states.col(i) = next;
     }
     return states;
 }
