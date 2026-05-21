@@ -56,7 +56,7 @@ ECIStateDot computeDragTranslationalDynamics(const ECIState& state, Real mu, Rea
     return derivative;
 }
 
-ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu, Real Cr, Real A, Real m) {
+ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, const Vec3& sun_dir_eci, Real mu, Real Cr, Real A, Real m) {
     const Vec3 r_vec = state.position;
 
     const Real r = r_vec.norm();
@@ -68,7 +68,7 @@ ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu, Real
 
     ECIStateDot derivative;
     derivative.velocity = state.velocity;
-    derivative.acceleration = -P * Cr * A / m * r_vec.normalized();
+    derivative.acceleration = -P * Cr * A / m * sun_dir_eci.normalized(); //excludes angle between sun direction and surface normal for simplicity
     return derivative;
 }
 
@@ -79,7 +79,7 @@ ECIStateDot computeTotalTranslationalDynamics(const ECIState& state, const Force
     if (config.useDrag)
         totalAcc.acceleration += computeDragTranslationalDynamics(state, constants::MU_EARTH, config.Cd, config.A, config.m).acceleration;
     if (config.useSRP)
-        totalAcc.acceleration += computeSRPTranslationalDynamics(state, constants::MU_EARTH, config.Cr, config.A, config.m).acceleration;
+        totalAcc.acceleration += computeSRPTranslationalDynamics(state, config.sun_dir_eci, constants::MU_EARTH, config.Cr, config.A, config.m).acceleration;
     return totalAcc;
 }
 

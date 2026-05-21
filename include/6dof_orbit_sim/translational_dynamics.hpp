@@ -36,7 +36,7 @@ ECIStateDot computeDragTranslationalDynamics(const ECIState& state, Real mu = co
 /// @param A Reference area (default: 0.2 m²)
 /// @param m Mass (default: 100.0)
 /// @return  State derivative due to solar radiation pressure [0, 0, 0, ax, ay, az]
-ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, Real mu = constants::MU_EARTH, Real Cr = 1.5, Real A = 0.2, Real m = 100.0);
+ECIStateDot computeSRPTranslationalDynamics(const ECIState& state, const Vec3& sun_dir_eci, Real mu = constants::MU_EARTH, Real Cr = 1.5, Real A = 0.2, Real m = 100.0);
 
 /// @brief Configuration for selecting which forces to include in the total acceleration calculation.
 struct ForceModelConfig {
@@ -47,6 +47,7 @@ struct ForceModelConfig {
     Real Cr = 1.5;
     Real A = 0.2;   // m²
     Real m = 100.0; // kg
+    Vec3 sun_dir_eci = Vec3(1.0, 0.0, 0.0); // Unit vector from Earth to Sun in ECI frame
 };
 
 /// @brief Compute total acceleration from selected force model components.

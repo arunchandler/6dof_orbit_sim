@@ -198,10 +198,12 @@ static void testDrag_scalesInverselyWithMass() {
 //  4. Solar radiation pressure
 // ─────────────────────────────────────────────
 
+Vec3 sun_dir_eci = Vec3(1.0, 0.0, 0.0); // Unit vector from Earth to Sun in ECI frame
+
 static void testSRP_smallerThanTwoBody() {
     ECIState state = circularLEO(7000000.0);
     ECIStateDot deriv_2b = compute2BodyTranslationalDynamics(state);
-    ECIStateDot deriv_srp = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
+    ECIStateDot deriv_srp = computeSRPTranslationalDynamics(state, sun_dir_eci, constants::MU_EARTH, 1.5, 1.0, 100.0);
 
     Real a_2b = deriv_2b.acceleration.norm();
     Real a_srp = deriv_srp.acceleration.norm();
@@ -212,8 +214,8 @@ static void testSRP_smallerThanTwoBody() {
 
 static void testSRP_scalesWithArea() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
-    ECIStateDot d2    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 2.0, 100.0);
+    ECIStateDot d1    = computeSRPTranslationalDynamics(state, sun_dir_eci, constants::MU_EARTH, 1.5, 1.0, 100.0);
+    ECIStateDot d2    = computeSRPTranslationalDynamics(state, sun_dir_eci, constants::MU_EARTH, 1.5, 2.0, 100.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 2.0, 1e-6),
@@ -222,8 +224,8 @@ static void testSRP_scalesWithArea() {
 
 static void testSRP_scalesInverselyWithMass() {
     ECIState state = circularLEO(7000000.0);
-    ECIStateDot d1    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 100.0);
-    ECIStateDot d2    = computeSRPTranslationalDynamics(state, constants::MU_EARTH, 1.5, 1.0, 200.0);
+    ECIStateDot d1    = computeSRPTranslationalDynamics(state, sun_dir_eci, constants::MU_EARTH, 1.5, 1.0, 100.0);
+    ECIStateDot d2    = computeSRPTranslationalDynamics(state, sun_dir_eci, constants::MU_EARTH, 1.5, 1.0, 200.0);
 
     Real ratio = d2.acceleration.norm() / d1.acceleration.norm();
     check(nearlyEqual(ratio, 0.5, 1e-6),

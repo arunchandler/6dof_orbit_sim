@@ -34,7 +34,7 @@ AttitudeStateDot computeDragAttitudeDynamics(const AttitudeState& attitude_state
 
     Real rho = 1e-10; // Placeholder - replace with actual atmosphere model
     
-    Real v_rel = eci_state.velocity.norm();
+    Real v_rel = eci_state.velocity.norm(); // Assuming atmosphere is stationary in ECI frame
 
     Vec3 force_eci = -0.5 * rho * Cd * area * v_rel * eci_state.velocity;
     Vec3 force_body = attitude_state.q.rotate(force_eci);
@@ -75,7 +75,9 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
                              const TorqueModelConfig& config,
                              Real mu) {
 
+    Vec3 omega = attitude_state.omega;
     Vec3 omega_dot = Vec3::Zero();
+    int active_count = 0;
 
     if (config.useGravityGradient) {
         AttitudeStateDot x = computeGravGradAttitudeDynamics(
@@ -86,6 +88,7 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
             mu
         );
         omega_dot += x.omega_dot;
+        active_count++;
     }
 
     if (config.useDrag) {
@@ -99,6 +102,7 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
             config.area
         );
         omega_dot += x.omega_dot;
+        active_count++;
     }
 
     if (config.useSRP) {
@@ -114,6 +118,12 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
             config.P_srp
         );
         omega_dot += x.omega_dot;
+        active_count++;
+    }
+
+    // Add back in the ω × Iω term for each additional active torque model to avoid double-counting it in the individual torque computations
+    if (active_count > 1) {
+        omega_dot += (active_count - 1) * inertia_tensor_inv * (omega.cross(inertia_tensor * omega));
     }
 
     QuaternionDot q_dot = quaternion_kinematics(attitude_state.q, attitude_state.omega);
