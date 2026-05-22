@@ -34,6 +34,11 @@ namespace constants {
     static const Real TWO_PI   = 2.0 * M_PI;
     static const Real AU       = 149597870700.0; // m
     static const Real C_LIGHT  = 299792458.0;     // m/s
+    static const Real MU0_OVER_4PI = 1.0e-7;          // T·m/A  (μ₀/4π)
+    static const Real EARTH_MAG_MOM  = 7.94e22;          // A·m²   (Earth dipole magnitude)
+    static const Real EARTH_ROT_RATE = 7.2921150e-5;     // rad/s  (ω_E)
+    static const Real MAG_DIPOLE_TILT     = 11.3 * M_PI / 180.0;  // rad
+    static const Real MAG_DIPOLE_LON_J2000 = 289.1 * M_PI / 180.0; // rad (longitude at J2000)
 }
 
 // unit testing utilities
