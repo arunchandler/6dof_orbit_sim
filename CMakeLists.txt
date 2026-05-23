@@ -13,6 +13,7 @@ add_library(6dof_orbit_sim
     src/translational_dynamics.cpp
     src/attitude_dynamics.cpp
     src/6dof_dynamics.cpp
+    src/actuator.cpp
 )
 target_include_directories(6dof_orbit_sim PUBLIC include)
 target_link_libraries(6dof_orbit_sim PUBLIC Eigen3::Eigen)

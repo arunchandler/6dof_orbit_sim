@@ -15,10 +15,25 @@ namespace orb {
 /// @param force_config Configuration for which forces to include in translational dynamics
 /// @param torque_config Configuration for which torques to include in attitude dynamics
 /// @return Time derivative of the full 6DoF state (position_dot, velocity_dot, q_dot, omega_dot)
-SixDoFStateDot sixDoFDynamics(const SixDoFState& state, Mat3& inertia_tensor, Mat3& inertia_tensor_inv, const ForceModelConfig& force_config, const TorqueModelConfig& torque_config);
+SixDoFStateDot sixDoFDynamics(const SixDoFState& state,
+                             Mat3& inertia_tensor,
+                             Mat3& inertia_tensor_inv,
+                             const ForceModelConfig& force_config,
+                             const TorqueModelConfig& torque_config,
+                             ActuatorSuite<4,3>& suite,
+                             ActuatorCommands<4,3>& cmds,
+                             const Quaternion& q_desired,
+                             const QuaternionPDController& ctrl,
+                             Real t_sec,
+                             Real dt);
 
 DerivFunc makeSixDoFDeriv(Mat3& inertia, Mat3& inertia_inv,
                            const ForceModelConfig& force_config,
-                           const TorqueModelConfig& torque_config);
+                           const TorqueModelConfig& torque_config,
+                           ActuatorSuite<4,3>& suite,
+                           ActuatorCommands<4,3>& cmds,
+                           const Quaternion& q_desired,
+                           const QuaternionPDController& ctrl,
+                           Real dt);
 
 } // namespace orb

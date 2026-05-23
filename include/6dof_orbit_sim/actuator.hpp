@@ -1,367 +1,309 @@
 #pragma once
-#include "types.hpp"
+ 
+/**
+ * actuator.hpp
+ *
+ * Attitude actuator models for 6DoF spacecraft simulation.
+ * Includes: reaction wheels, thrusters, magnetorquers, and a
+ * tilted-dipole magnetic field model (ECI frame).
+ *
+ * Conventions:
+ *   - All vectors body-frame unless suffixed _eci
+ *   - SI units throughout (kg, m, s, N, T, A·m²)
+ *   - Actuator omega_dot is ADDITIVE to disturbance omega_dot:
+ *
+ *       AttitudeStateDot d_dist = computeTotalAttitudeDynamics(...);
+ *       AttitudeStateDot d_act  = computeActuatorAttitudeDynamics(...);
+ *       omega_dot_total = d_dist.omega_dot + d_act.omega_dot   ← just Vec3 +=
+ *       q_dot_total     = d_dist.q_dot                         ← unchanged
+ *
+ *     This decomposition is exact because:
+ *       I dω/dt = (τ_dist − ω×Iω)  +  (τ_act − ω×h_rw)
+ *                 ↑ existing funcs       ↑ this file
+ */
+ 
 #include <array>
 #include <cmath>
 #include <stdexcept>
-
+ 
+#include "types.hpp"
+#include "attitude_state.hpp"
+ 
+namespace orb {
+ 
 // ─────────────────────────────────────────────────────────────────────────────
-// Magnetic field model  —  IGRF tilted co-rotating dipole (ECI output)
+// Magnetic field model  —  IGRF tilted co-rotating dipole  (ECI output)
 //
-// Uses a simple titled-dipole model that rotates with the Earth.
-// Accuracy: ~few hundred nT at LEO — good enough for control design and
-// hardware-in-the-loop, but replace with full IGRF for precision work.
-//
-//   r_eci  : spacecraft position in ECI [m]
-//   t_sec  : seconds since J2000.0 epoch (TT or UTC both fine for this model)
-//   returns: magnetic field vector in ECI [T]
+//   r_eci  : spacecraft ECI position [m]  ← pass eci_state.position
+//   t_sec  : seconds since J2000.0
+//   return : magnetic field vector in ECI [T]
 // ─────────────────────────────────────────────────────────────────────────────
-inline Vec3 dipole_field_eci(const Vec3& r_eci, Real t_sec)
-{
-    // --- Earth dipole axis in ECI ---
-    // Rotates with Earth starting from its J2000 longitude reference
-    const Real theta = constants::EARTH_ROT_RATE * t_sec + constants::MAG_DIPOLE_LON_J2000;
-    const Real sin_tilt = std::sin(constants::MAG_DIPOLE_TILT);
-    const Real cos_tilt = std::cos(constants::MAG_DIPOLE_TILT);
-
-    // Unit dipole axis in ECI (co-rotating with Earth)
-    const Vec3 m_hat(
-        sin_tilt * std::cos(theta),
-        sin_tilt * std::sin(theta),
-        cos_tilt
-    );
-
-    // --- Dipole field formula: B = (μ₀/4π) * m_E / r³ * [3(m̂·r̂)r̂ − m̂] ---
-    const Real r = r_eci.norm();
-    if (r < 1.0) throw std::domain_error("dipole_field_eci: |r_eci| is near zero");
-
-    const Vec3 r_hat = r_eci / r;
-    const Real scale = constants::MU0_OVER_4PI * constants::EARTH_MAG_MOM / (r * r * r);
-    const Real mdotr = m_hat.dot(r_hat);
-
-    return scale * (3.0 * mdotr * r_hat - m_hat);
-}
-
+Vec3 dipole_field_eci(const Vec3& r_eci, Real t_sec);
+ 
 // ─────────────────────────────────────────────────────────────────────────────
-// Common output structure — torque (and optionally force) produced in one
-// integration step.  Accumulate across all actuators before applying.
+// Actuator output  —  torque (and optionally force) produced in one step.
+// Accumulate with += across all subsystems before applying.
 // ─────────────────────────────────────────────────────────────────────────────
 struct ActuatorOutput {
-    Vec3 torque_b = Vec3::Zero(); // Body-frame torque [N·m]
-    Vec3 force_b  = Vec3::Zero(); // Body-frame force  [N]  (thrusters only)
+    Vec3 torque_b = Vec3::Zero();  // Body-frame torque [N·m]
+    Vec3 force_b  = Vec3::Zero();  // Body-frame force  [N]  (thrusters only)
+ 
+    ActuatorOutput& operator+=(const ActuatorOutput& rhs) noexcept {
+        torque_b += rhs.torque_b;
+        force_b  += rhs.force_b;
+        return *this;
+    }
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
 // REACTION WHEEL
 //
-// A single momentum wheel spinning about a fixed body-frame axis.
+// State: omega_w — wheel angular velocity [rad/s]
+// Input: tau_cmd — commanded motor torque [N·m]
 //
-// State:  omega_w  — wheel angular velocity [rad/s]
-// Input:  tau_cmd  — commanded motor torque [N·m]  (positive = accelerate wheel)
+// Wheel EOM:  I_w · dω_w/dt = τ_cmd − τ_friction
+// Body torque: −τ_cmd  (Newton's 3rd law)
 //
-// Physics:
-//   I_w * dω_w/dt  =  τ_cmd − τ_friction        (wheel EOM)
-//   τ_on_body      = −τ_cmd                       (Newton 3rd law)
-//
-// The angular momentum stored in the wheel array must be tracked separately
-// and included in Euler's equation as:
-//   I_sc * dω/dt = τ_ext − ω × (I_sc * ω + h_rw_total)
-// where h_rw_total = Σ I_w,i * ω_w,i * â_i
+// The stored angular momentum h_rw must be included in the gyroscopic term
+// of Euler's equation — see computeActuatorAttitudeDynamics() below.
 // ─────────────────────────────────────────────────────────────────────────────
 struct ReactionWheel {
-    // ---- Configuration (set once) ----
-    Real          inertia;       // Wheel moment of inertia [kg·m²]
-    Real          max_torque;    // Peak motor torque [N·m]
-    Real          max_speed;     // Saturation speed [rad/s]
-    Real          friction_coef; // Viscous friction coefficient [N·m·s/rad]
-    Vec3 spin_axis_b;   // Unit spin axis in body frame
-
-    // ---- State (integrated each step) ----
-    Real omega_w = 0.0;          // Current wheel speed [rad/s]
-
-    // Clamp and apply commanded torque; returns torque exerted ON the spacecraft body.
-    // Call update() every integration step, then add output.torque_b to tau_total.
-    ActuatorOutput update(Real tau_cmd, Real dt)
-    {
-        // Clamp commanded torque
-        const Real tau = std::clamp(tau_cmd, -max_torque, max_torque);
-
-        // Viscous friction opposes wheel motion
-        const Real tau_friction = friction_coef * omega_w;
-        const Real tau_net_wheel = tau - tau_friction;
-
-        // Integrate wheel speed (simple Euler — match to your integrator)
-        omega_w += (tau_net_wheel / inertia) * dt;
-
-        // Hard saturation: if the wheel hits max speed it can't accelerate further
-        // (real wheels would trigger desaturation logic upstream)
-        omega_w = std::clamp(omega_w, -max_speed, max_speed);
-
-        ActuatorOutput out;
-        // Reaction torque on body is equal and opposite to motor torque on wheel
-        out.torque_b = -tau * spin_axis_b;
-        return out;
-    }
-
-    // Angular momentum currently stored in this wheel [N·m·s]
-    Vec3 momentum() const { return inertia * omega_w * spin_axis_b; }
-
-    // True when the wheel is saturated (body torque authority = 0 in this axis)
-    bool is_saturated() const { return std::abs(omega_w) >= max_speed * 0.999; }
+    Real inertia;       // Wheel moment of inertia [kg·m²]
+    Real max_torque;    // Peak motor torque [N·m]
+    Real max_speed;     // Saturation speed [rad/s]
+    Real friction_coef; // Viscous friction coefficient [N·m·s/rad]
+    Vec3 spin_axis_b;   // Unit spin axis in body frame (normalise before use)
+ 
+    Real omega_w = 0.0; // Current wheel speed [rad/s]
+ 
+    // Step the wheel and return the reaction torque on the spacecraft body.
+    // dt should match your outer integrator timestep.
+    ActuatorOutput update(Real tau_cmd, Real dt);
+ 
+    Vec3 momentum()     const;
+    bool is_saturated() const;
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
-// REACTION WHEEL ARRAY  (convenience wrapper for N wheels)
+// REACTION WHEEL ARRAY  (N wheels, arbitrary geometry)
 //
-// Typical configurations:
-//   3-wheel orthogonal, 4-wheel pyramid, 6-wheel (pairs per axis)
+// Typical configs: 3-wheel orthogonal, 4-wheel pyramid, 6-wheel redundant.
+// A pseudo-inverse distributes a desired 3-vector body torque across all wheels.
 //
-// Usage:
-//   ReactionWheelArray<4> rwa;
-//   rwa.wheels[i] = { ... };          // configure
-//   auto out = rwa.update(tau_cmd_vec, dt);   // 3-vector command → outputs
+// NOTE: Template — fully defined here; cannot be split into a .cpp.
 // ─────────────────────────────────────────────────────────────────────────────
 template<std::size_t N>
 struct ReactionWheelArray {
     std::array<ReactionWheel, N> wheels;
-
-    // Configuration matrix A (3×N): each column is the spin axis of wheel i.
-    // Build once from the configured wheel axes.
+ 
+    // 3×N matrix whose columns are the spin axes of each wheel
     MatX axis_matrix() const
     {
-        MatX A(3, N);
+        MatX A(3, static_cast<int>(N));
         for (std::size_t i = 0; i < N; ++i)
             A.col(i) = wheels[i].spin_axis_b;
         return A;
     }
-
-    // Distribute a desired body torque vector across N wheels via
-    // pseudo-inverse allocation.  Returns the achieved body torque
-    // (may differ if wheels saturate).
-    //
-    // tau_cmd_b : desired 3-vector body torque [N·m]
-    // dt        : timestep [s]
+ 
+    // Distribute desired body torque via Moore-Penrose pseudo-inverse.
+    // Achieved torque may differ if individual wheels saturate.
     ActuatorOutput update(const Vec3& tau_cmd_b, Real dt)
     {
-        // Moore-Penrose pseudo-inverse: τ_w = A† τ_body
         const MatX A     = axis_matrix();
         const MatX Apinv = A.completeOrthogonalDecomposition().pseudoInverse();
         const VecX tau_w = Apinv * tau_cmd_b;
-
+ 
         ActuatorOutput total;
-        for (std::size_t i = 0; i < N; ++i) {
-            auto out = wheels[i].update(tau_w(i), dt);
-            total.torque_b += out.torque_b;
-        }
+        for (std::size_t i = 0; i < N; ++i)
+            total += wheels[i].update(tau_w(static_cast<int>(i)), dt);
         return total;
     }
-
-    // Total angular momentum stored across all wheels [N·m·s]
+ 
     Vec3 total_momentum() const
     {
         Vec3 h = Vec3::Zero();
         for (const auto& w : wheels) h += w.momentum();
         return h;
     }
+ 
+    bool any_saturated() const
+    {
+        for (const auto& w : wheels)
+            if (w.is_saturated()) return true;
+        return false;
+    }
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
 // THRUSTER
 //
-// A single on/off (or throttleable) thruster at a fixed body-frame location.
+// A single throttleable thruster at a fixed body-frame offset from the CoM.
+// Input: duty_cycle ∈ [0, 1]  (0 = off, 1 = full thrust; bang-bang → 0 or 1)
 //
-// Input: duty_cycle ∈ [0, 1]  (0 = off, 1 = full thrust)
-//        For bang-bang attitude control, pass 0 or 1.
-//        For continuous approximation, pass a fractional value.
+// Force  = thrust · direction_b
+// Torque = position_b × Force
 //
-// Produced torque is r × F where r is measured from the spacecraft CoM.
-// Produced force is also accumulated — relevant for coupled attitude/orbit.
+// Force is accumulated in ActuatorOutput.force_b for coupled orbit/attitude.
 // ─────────────────────────────────────────────────────────────────────────────
 struct Thruster {
-    // ---- Configuration ----
-    Real          max_thrust;   // Peak thrust [N]
-    Real          min_impulse;  // Minimum impulse bit [N·s] — 0 disables check
-    Vec3 position_b;   // Thruster position in body frame [m] from CoM
-    Vec3 direction_b;  // Thrust direction unit vector (body frame)
-                                  // (pointing FROM nozzle, i.e. direction of force)
-
-    ActuatorOutput fire(Real duty_cycle) const
-    {
-        const Real dc = std::clamp(duty_cycle, 0.0, 1.0);
-        const Real thrust = max_thrust * dc;
-        const Vec3 F = thrust * direction_b;
-
-        ActuatorOutput out;
-        out.force_b  = F;
-        out.torque_b = position_b.cross(F);  // τ = r × F
-        return out;
-    }
+    Real max_thrust;  // Peak thrust [N]
+    Real min_impulse; // Minimum impulse bit [N·s]; 0 = no check
+    Vec3 position_b;  // Position in body frame from CoM [m]
+    Vec3 direction_b; // Thrust direction unit vector (body frame)
+ 
+    ActuatorOutput fire(Real duty_cycle) const;
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// THRUSTER PAIR  (couple for pure torque, no net force)
-//
-// Two thrusters fired simultaneously, producing torque about a body axis.
-// ─────────────────────────────────────────────────────────────────────────────
+ 
+// Thruster pair: two opposing thrusters that produce pure torque about one axis
+// with no net force. Pass a signed torque command; the correct side fires.
 struct ThrusterPair {
-    Thruster pos_thruster;  // fires when torque_cmd > 0
-    Thruster neg_thruster;  // fires when torque_cmd < 0
-
-    // torque_cmd : signed desired torque magnitude [N·m] along the pair's axis
-    ActuatorOutput fire(Real torque_cmd) const
-    {
-        if (torque_cmd > 0.0) return pos_thruster.fire(1.0);
-        if (torque_cmd < 0.0) return neg_thruster.fire(1.0);
-        return {};  // zero command → no fire
-    }
+    Thruster pos_thruster; // fires when torque_cmd > 0
+    Thruster neg_thruster; // fires when torque_cmd < 0
+ 
+    ActuatorOutput fire(Real torque_cmd) const;
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAGNETORQUER
 //
 // Generates a magnetic dipole moment m [A·m²] along a fixed body axis.
-// Torque produced: τ = m × B_body
+// Torque: τ = m × B_body
 //
-// Note: magnetorquers cannot produce torque parallel to B — there is always
-// one uncontrollable axis at any instant.  Three-axis control requires that
-// the orbit provides sufficient variation in B direction over time.
+// One axis is always uncontrollable (the component parallel to B).
+// Full 3-axis authority requires orbital variation of B over time.
 //
-// Input: dipole_cmd ∈ [-1, 1]  (fraction of max dipole)
-//        B_body               : magnetic field in body frame [T]
+// Input: dipole_cmd ∈ [−1, 1] (fraction of max_dipole)
+//        B_body               [T] — body-frame magnetic field
 // ─────────────────────────────────────────────────────────────────────────────
 struct Magnetorquer {
-    // ---- Configuration ----
-    Real          max_dipole;  // Maximum magnetic dipole moment [A·m²]
-    Vec3 axis_b;      // Unit axis of dipole in body frame
-
-    ActuatorOutput apply(Real dipole_cmd, const Vec3& B_body) const
-    {
-        const Real m_mag = max_dipole * std::clamp(dipole_cmd, -1.0, 1.0);
-        const Vec3 m_vec = m_mag * axis_b;
-
-        ActuatorOutput out;
-        out.torque_b = m_vec.cross(B_body);  // τ = m × B
-        return out;
-    }
-
-    // Null space check: returns how aligned the commanded axis is with B.
-    // Values near 1.0 mean this torquer is nearly ineffective right now.
-    double alignment_with_field(const Vec3& B_body) const
-    {
-        const double Bnorm = B_body.norm();
-        if (Bnorm < 1e-15) return 0.0;
-        return std::abs(axis_b.dot(B_body / Bnorm));
-    }
+    Real max_dipole; // Maximum dipole moment [A·m²]
+    Vec3 axis_b;     // Unit rod axis in body frame
+ 
+    ActuatorOutput apply(Real dipole_cmd, const Vec3& B_body) const;
+ 
+    // Returns how aligned this rod axis is with B (0 = perpendicular, 1 = parallel).
+    // Values near 1 mean this rod has near-zero torque authority right now.
+    Real alignment_with_field(const Vec3& B_body) const;
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAGNETORQUER ASSEMBLY  (3 orthogonal rods — standard cubesat config)
-//
-// Provides a B-dot or cross-product control law interface.
+// MAGNETORQUER ASSEMBLY  (3 orthogonal rods — standard CubeSat layout)
 // ─────────────────────────────────────────────────────────────────────────────
 struct MagnetorquerAssembly {
     std::array<Magnetorquer, 3> mtqs;
-
-    // Distribute a desired body torque into dipole commands via
-    // τ_desired = m × B  →  solve for m via cross-product inverse.
-    //
-    // The exact solution: m = (B × τ_desired) / |B|²
-    // This is the minimum-norm dipole that produces τ_desired.
-    // The component of τ along B cannot be produced — it is silently dropped.
-    //
-    // Returns the body torque that will actually be produced.
+ 
+    // Torque-command interface — solves τ = m × B for the minimum-norm dipole:
+    //   m = (B × τ_desired) / |B|²
+    // The component of τ parallel to B is unachievable and is silently dropped.
     ActuatorOutput apply_torque_cmd(const Vec3& tau_cmd_b,
-                                    const Vec3& B_body) const
-    {
-        const double Bsq = B_body.squaredNorm();
-        if (Bsq < 1e-20) return {};  // no field → no torque
-
-        // Minimum-norm dipole solution
-        const Eigen::Vector3d m_desired = B_body.cross(tau_cmd_b) / Bsq;
-
-        ActuatorOutput total;
-        for (int i = 0; i < 3; ++i) {
-            // Project desired dipole onto each rod axis
-            const double cmd_Am2 = m_desired.dot(mtqs[i].axis_b);
-            const double cmd_norm = cmd_Am2 / mtqs[i].max_dipole;  // normalize
-            total.torque_b += mtqs[i].apply(cmd_norm, B_body).torque_b;
-        }
-        return total;
-    }
-
-    // Raw dipole command — useful for B-dot detumbling:
-    //   dipole_cmd_vec = -k * B_dot  (each component normalized to [-1,1])
-    ActuatorOutput apply_dipole_cmd(const Eigen::Vector3d& dipole_cmd_b,
-                                    const Eigen::Vector3d& B_body) const
-    {
-        ActuatorOutput total;
-        for (int i = 0; i < 3; ++i) {
-            const double cmd = dipole_cmd_b.dot(mtqs[i].axis_b) / mtqs[i].max_dipole;
-            total.torque_b += mtqs[i].apply(cmd, B_body).torque_b;
-        }
-        return total;
-    }
-
-    // Build a standard 3-axis assembly with body-aligned rods (X, Y, Z)
-    static MagnetorquerAssembly make_xyz(double max_dipole_Am2)
-    {
-        MagnetorquerAssembly asm_;
-        asm_.mtqs[0] = { max_dipole_Am2, Eigen::Vector3d::UnitX() };
-        asm_.mtqs[1] = { max_dipole_Am2, Eigen::Vector3d::UnitY() };
-        asm_.mtqs[2] = { max_dipole_Am2, Eigen::Vector3d::UnitZ() };
-        return asm_;
-    }
+                                    const Vec3& B_body) const;
+ 
+    // Raw dipole-command interface — used for B-dot detumbling:
+    //   dipole_cmd_b = −k_bdot · B_dot_body   (pass the 3-vector directly)
+    ActuatorOutput apply_dipole_cmd(const Vec3& dipole_cmd_b,
+                                    const Vec3& B_body) const;
+ 
+    // Convenience factory: standard X/Y/Z aligned rods, all same max dipole
+    static MagnetorquerAssembly make_xyz(Real max_dipole_Am2);
 };
-
+ 
 // ─────────────────────────────────────────────────────────────────────────────
-// FULL ACTUATOR SUITE  (aggregate for a single spacecraft)
-//
-// Example usage in your propagator's state-derivative function:
-//
-//   // 1. Get B in body frame
-//   Eigen::Vector3d B_eci = dipole_field_eci(r_eci, t);
-//   Eigen::Vector3d B_b   = R_eci_to_body * B_eci;
-//
-//   // 2. Compute commanded actuator outputs
-//   auto rwa_out = suite.rwa.update(tau_rwa_cmd, dt);
-//   auto mtq_out = suite.mtq.apply_torque_cmd(tau_mtq_cmd, B_b);
-//   auto thr_out = suite.thruster_pairs[0].fire(torque_cmd_x);
-//
-//   // 3. Sum total torque (and force if needed)
-//   Eigen::Vector3d tau_total = rwa_out.torque_b
-//                             + mtq_out.torque_b
-//                             + thr_out.torque_b;
-//
-//   // 4. Euler's equation (include stored RWA momentum)
-//   //    I_sc * dw/dt = tau_total - w x (I_sc*w + rwa.total_momentum())
-//   Eigen::Vector3d h_total = I_sc * omega + suite.rwa.total_momentum();
-//   Eigen::Vector3d domega  = I_sc_inv * (tau_total - omega.cross(h_total));
+// ACTUATOR SUITE  —  all subsystems in one place
+// NOTE: Template — fully defined here; cannot be split into a .cpp.
 // ─────────────────────────────────────────────────────────────────────────────
 template<std::size_t N_RWA = 4, std::size_t N_THR_PAIRS = 3>
 struct ActuatorSuite {
-    ReactionWheelArray<N_RWA>               rwa;
-    MagnetorquerAssembly                    mtq;
-    std::array<ThrusterPair, N_THR_PAIRS>   thruster_pairs;
-
-    // Helper: compute total body torque from all active actuators.
-    // Pass zero vectors for actuators not in use this step.
-    ActuatorOutput compute_total(
-        const Eigen::Vector3d& tau_rwa_cmd,          // desired RWA body torque
-        const Eigen::Vector3d& tau_mtq_cmd,          // desired MTQ body torque
-        const Eigen::Vector3d& B_body,               // magnetic field in body frame [T]
-        const std::array<double, N_THR_PAIRS>& thr_cmds,  // signed torque cmd per pair
-        double dt)
-    {
-        ActuatorOutput total;
-
-        total.torque_b += rwa.update(tau_rwa_cmd, dt).torque_b;
-        total.torque_b += mtq.apply_torque_cmd(tau_mtq_cmd, B_body).torque_b;
-
-        for (std::size_t i = 0; i < N_THR_PAIRS; ++i) {
-            auto out = thruster_pairs[i].fire(thr_cmds[i]);
-            total.torque_b += out.torque_b;
-            total.force_b  += out.force_b;
-        }
-
-        return total;
-    }
+    ReactionWheelArray<N_RWA>             rwa;
+    MagnetorquerAssembly                  mtq;
+    std::array<ThrusterPair, N_THR_PAIRS> thruster_pairs;
 };
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTUATOR COMMANDS  —  inputs delivered every integration step
+// NOTE: Template — fully defined here; cannot be split into a .cpp.
+// ─────────────────────────────────────────────────────────────────────────────
+template<std::size_t N_RWA = 4, std::size_t N_THR_PAIRS = 3>
+struct ActuatorCommands {
+    Vec3 tau_rwa_cmd = Vec3::Zero(); // Desired body torque from RWA [N·m]
+    Vec3 tau_mtq_cmd = Vec3::Zero(); // Desired body torque from MTQs [N·m]
+    std::array<Real, N_THR_PAIRS> thr_cmds = {}; // Signed torque per pair [N·m]
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// computeActuatorAttitudeDynamics()
+//
+// Returns the AttitudeStateDot contribution from all actuators. Add its
+// omega_dot field to the omega_dot returned by computeTotalAttitudeDynamics()
+// before integrating. The q_dot field is always zero (actuators do not
+// directly affect kinematics).
+//
+// The split is exact:
+//   I dω/dt = (τ_dist − ω×Iω)    ← computeTotalAttitudeDynamics
+//           + (τ_act  − ω×h_rw)   ← this function
+//
+// Parameters:
+//   attitude_state      Current attitude state (q, omega)
+//   r_eci               Spacecraft ECI position [m]  ← eci_state.position
+//   inertia_tensor      Inertia tensor in body frame [kg·m²]
+//   inertia_tensor_inv  Inverse inertia tensor
+//   suite               Actuator suite — wheel speeds are integrated in-place
+//   cmds                Commanded inputs for this step
+//   t_sec               Simulation time since J2000 [s] (for B-field model)
+//   dt                  Integration timestep [s] (for wheel dynamics)
+//
+// NOTE: Template — fully defined here; cannot be split into a .cpp.
+// ─────────────────────────────────────────────────────────────────────────────
+template<std::size_t N_RWA, std::size_t N_THR_PAIRS>
+AttitudeStateDot computeActuatorAttitudeDynamics(
+    const AttitudeState&                         attitude_state,
+    const Vec3&                                  r_eci,
+    const Mat3&                                  inertia_tensor,
+    const Mat3&                                  inertia_tensor_inv,
+    ActuatorSuite<N_RWA, N_THR_PAIRS>&           suite,
+    const ActuatorCommands<N_RWA, N_THR_PAIRS>&  cmds,
+    Real                                         t_sec,
+    Real                                         dt)
+{
+    // Rotate B from ECI into body frame using the attitude quaternion
+    const Vec3 B_eci  = dipole_field_eci(r_eci, t_sec);
+    const Vec3 B_body = attitude_state.q.rotate(B_eci);
+ 
+    // Accumulate torques from all subsystems
+    ActuatorOutput total;
+    total += suite.rwa.update(cmds.tau_rwa_cmd, dt);
+    total += suite.mtq.apply_torque_cmd(cmds.tau_mtq_cmd, B_body);
+    for (std::size_t i = 0; i < N_THR_PAIRS; ++i)
+        total += suite.thruster_pairs[i].fire(cmds.thr_cmds[i]);
+ 
+    // Gyroscopic term from stored wheel momentum (separate from ω×Iω in dynamics)
+    const Vec3& omega     = attitude_state.omega;
+    const Vec3  h_rw      = suite.rwa.total_momentum();
+    const Vec3  omega_dot = inertia_tensor_inv
+                          * (total.torque_b - omega.cross(h_rw));
+ 
+    return AttitudeStateDot{
+        quaternion_kinematics(attitude_state.q, omega),
+        omega_dot
+    };
+}
+
+struct QuaternionPDController {
+    Real k_p;  // Proportional gain [N·m]
+    Real k_d;  // Derivative gain   [N·m·s/rad]
+ 
+    Vec3 compute_torque(const AttitudeState& state,
+                        const Quaternion&    q_desired) const;
+ 
+    // Error quaternion (q_desired* ⊗ q_current), sign-corrected for short arc.
+    static Quaternion error_quaternion(const AttitudeState& state,
+                                       const Quaternion&    q_desired);
+};
+
+Quaternion make_desired_quaternion(const Vec3& primary_axis_b,
+                                   const Vec3& primary_target,
+                                   const Vec3& secondary_axis_b,
+                                   const Vec3& secondary_target);
+
+
+ 
+} // namespace orb

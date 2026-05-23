@@ -451,6 +451,9 @@ static void testSRP_qdotZeroForZeroOmega() {
 //  4. Total Torque Model
 // ─────────────────────────────────────────────
 
+ActuatorSuite<4,3> dummy_actuators;  // not used in these tests
+ActuatorCommands<4,3> dummy_cmds;        // not used in these tests
+
 static void testTorqueTotal_matchesGravityGradientOnly() {
     AttitudeState att = {identityQuat(), Vec3(0.0, 0.0, 0.0)};
     ECIState eci;
@@ -465,8 +468,8 @@ static void testTorqueTotal_matchesGravityGradientOnly() {
     cfg.useDrag = false;
     cfg.useSRP = false;
 
-    auto ref = computeGravGradAttitudeDynamics(att, eci, I, Iinv, 0.0);
-    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, 0.0);
+    auto ref = computeGravGradAttitudeDynamics(att, eci, I, Iinv, constants::MU_EARTH);
+    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, dummy_actuators, dummy_cmds, 0.0, 0.0, constants::MU_EARTH);
 
     check(nearlyEqual((tot.omega_dot - ref.omega_dot).norm(), 0.0, 1e-15),
           "torqueTotal: gravity-gradient only matches ggradAttitudeDynamics");
@@ -491,7 +494,7 @@ static void testTorqueTotal_matchesDragOnly() {
 
     auto ref = computeDragAttitudeDynamics(att, eci, cfg.center_of_mass, I, Iinv,
                                            cfg.Cd, cfg.area);
-    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, 0.0);
+    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, dummy_actuators, dummy_cmds, 0.0, 0.0, constants::MU_EARTH);
 
     check(nearlyEqual((tot.omega_dot - ref.omega_dot).norm(), 0.0, 1e-15),
           "torqueTotal: drag only matches dragAttitudeDynamics");
@@ -519,7 +522,7 @@ static void testTorqueTotal_matchesSRPOnly() {
     auto ref = computeSRPAttitudeDynamics(att, eci, cfg.sun_dir_eci,
                                           cfg.center_of_mass, I, Iinv,
                                           cfg.Cr, cfg.area, cfg.P_srp);
-    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, 0.0);
+    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, dummy_actuators, dummy_cmds, 0.0, 0.0, constants::MU_EARTH);
 
     check(nearlyEqual((tot.omega_dot - ref.omega_dot).norm(), 0.0, 1e-15),
           "torqueTotal: SRP only matches srpAttitudeDynamics");
@@ -545,7 +548,7 @@ static void testTorqueTotal_combinedEqualsSum() {
     cfg.area = 0.4;
     cfg.P_srp = 4.56e-6;
 
-    auto gg  = computeGravGradAttitudeDynamics(att, eci, I, Iinv, 0.0);
+    auto gg  = computeGravGradAttitudeDynamics(att, eci, I, Iinv, constants::MU_EARTH);
     auto drg = computeDragAttitudeDynamics(att, eci, cfg.center_of_mass,
                                            I, Iinv, cfg.Cd, cfg.area);
     auto srp = computeSRPAttitudeDynamics(att, eci, cfg.sun_dir_eci,
@@ -554,7 +557,7 @@ static void testTorqueTotal_combinedEqualsSum() {
 
     Vec3 expected = gg.omega_dot + drg.omega_dot + srp.omega_dot;
 
-    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, 0.0);
+    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, dummy_actuators, dummy_cmds, 0.0, 0.0, constants::MU_EARTH);
 
     check(nearlyEqual((tot.omega_dot - expected).norm(), 0.0, 1e-15),
           "attitudeTotal: combined model equals sum of component models");
@@ -574,7 +577,7 @@ static void testTorqueTotal_noneEnabledZeroOmegaDot() {
     cfg.useDrag = false;
     cfg.useSRP = false;
 
-    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, 0.0);
+    auto tot = computeTotalAttitudeDynamics(att, eci, I, Iinv, cfg, dummy_actuators, dummy_cmds, 0.0, 0.0, constants::MU_EARTH);
 
     check(nearlyEqual(tot.omega_dot.norm(), 0.0, 1e-18),
           "attitudeTotal: no enabled torques gives zero omega_dot");

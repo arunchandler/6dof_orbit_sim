@@ -68,11 +68,18 @@ static void test6DoF_matchesSeparateModels() {
     torque_cfg.Cd   = 2.2;
     torque_cfg.area = 0.2;
 
-    SixDoFStateDot sixdof = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg);
+    ActuatorSuite<4,3> suite;
+    ActuatorCommands<4,3> cmds;
+    Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), Vec3::UnitY(), Vec3::UnitY(), Vec3::UnitY());
+    QuaternionPDController ctrl{
+        .k_p = 0.1,
+        .k_d = 0.01
+    };
+    SixDoFStateDot sixdof = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg, suite, cmds, q_d, ctrl, 0.0, 0.1);
 
     ECIStateDot eci_ref = computeTotalTranslationalDynamics(state.eci, force_cfg);
     AttitudeStateDot att_ref = computeTotalAttitudeDynamics(state.attitude, state.eci,
-                                                           I, Iinv, torque_cfg);
+                                                           I, Iinv, torque_cfg, suite, cmds, 0.0, 0.1);
 
     bool pass =
         nearlyEqual((sixdof.eci_dot.velocity - eci_ref.velocity).norm(), 0.0, 1e-12) &&
@@ -105,7 +112,14 @@ static void test6DoF_zeroOptionalModelsStillRuns() {
     torque_cfg.useDrag = false;
     torque_cfg.useSRP  = false;
 
-    SixDoFStateDot result = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg);
+    ActuatorSuite<4,3> suite;
+    ActuatorCommands<4,3> cmds;
+    Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), Vec3::UnitY(), Vec3::UnitY(), Vec3::UnitY());
+    QuaternionPDController ctrl{
+        .k_p = 0.1,
+        .k_d = 0.01
+    };
+    SixDoFStateDot result = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg, suite, cmds, q_d, ctrl, 0.0, 0.1);
 
     check(std::isfinite(result.eci_dot.acceleration.norm()) &&
           std::isfinite(result.attitude_dot.omega_dot.norm()),
@@ -134,7 +148,14 @@ static void test6DoF_attitudeRespondsToTorque() {
     torque_cfg.Cd   = 2.2;
     torque_cfg.area = 0.2;
 
-    auto result = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg);
+    ActuatorSuite<4,3> suite;
+    ActuatorCommands<4,3> cmds;
+    Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), Vec3::UnitY(), Vec3::UnitY(), Vec3::UnitY());
+    QuaternionPDController ctrl{
+        .k_p = 0.1,
+        .k_d = 0.01
+    };
+    auto result = sixDoFDynamics(state, I, Iinv, force_cfg, torque_cfg, suite, cmds, q_d, ctrl, 0.0, 0.1);
 
     check(result.attitude_dot.omega_dot.norm() > 0.0,
           "sixDoFDynamics: nonzero torque produces angular acceleration");

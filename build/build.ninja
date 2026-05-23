@@ -84,6 +84,13 @@ build CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o: CXX_COMPILER__6dof_
   OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir
   OBJECT_FILE_DIR = CMakeFiles/6dof_orbit_sim.dir/src
 
+build CMakeFiles/6dof_orbit_sim.dir/src/actuator.cpp.o: CXX_COMPILER__6dof_orbit_sim_unscanned_Debug /Users/arunchandler/Projects/6dof_orbit_sim/src/actuator.cpp || cmake_object_order_depends_target_6dof_orbit_sim
+  DEP_FILE = CMakeFiles/6dof_orbit_sim.dir/src/actuator.cpp.o.d
+  FLAGS = -g -std=c++14 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
+  INCLUDES = -I/Users/arunchandler/Projects/6dof_orbit_sim/include -isystem /usr/local/include/eigen3
+  OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir
+  OBJECT_FILE_DIR = CMakeFiles/6dof_orbit_sim.dir/src
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target 6dof_orbit_sim
@@ -92,7 +99,7 @@ build CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o: CXX_COMPILER__6dof_
 #############################################
 # Link the static library lib6dof_orbit_sim.a
 
-build lib6dof_orbit_sim.a: CXX_STATIC_LIBRARY_LINKER__6dof_orbit_sim_Debug CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/elements.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o
+build lib6dof_orbit_sim.a: CXX_STATIC_LIBRARY_LINKER__6dof_orbit_sim_Debug CMakeFiles/6dof_orbit_sim.dir/src/state_conversions.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/elements.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/translational_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/attitude_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/6dof_dynamics.cpp.o CMakeFiles/6dof_orbit_sim.dir/src/actuator.cpp.o
   ARCH_FLAGS = -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = CMakeFiles/6dof_orbit_sim.dir

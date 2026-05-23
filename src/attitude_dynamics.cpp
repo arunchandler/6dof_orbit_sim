@@ -1,4 +1,5 @@
 #include "6dof_orbit_sim/attitude_dynamics.hpp"
+#include "6dof_orbit_sim/actuator.hpp"
 #include <cmath>
 #include <stdexcept>
 
@@ -73,6 +74,10 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
                              Mat3& inertia_tensor,
                              Mat3& inertia_tensor_inv,
                              const TorqueModelConfig& config,
+                             ActuatorSuite<4,3>& suite,
+                             const ActuatorCommands<4,3>& cmds,
+                             Real t_sec,
+                             Real dt,
                              Real mu) {
 
     Vec3 omega = attitude_state.omega;
@@ -121,6 +126,21 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
         active_count++;
     }
 
+    if (config.useActuators) {
+        AttitudeStateDot x = computeActuatorAttitudeDynamics(
+            attitude_state,
+            eci_state.position,
+            inertia_tensor,
+            inertia_tensor_inv,
+            suite,
+            cmds,
+            t_sec,
+            dt
+        );
+        omega_dot += x.omega_dot;
+        // no active count increment here since actuator dynamics dont include the ω × Iω term in their torque computations
+    }
+
     // Add back in the ω × Iω term for each additional active torque model to avoid double-counting it in the individual torque computations
     if (active_count > 1) {
         omega_dot += (active_count - 1) * inertia_tensor_inv * (omega.cross(inertia_tensor * omega));
@@ -134,11 +154,14 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
 DerivFunc makeAttDeriv(const ECIState& eci_state,
                         Mat3& inertia,
                         Mat3& inertia_inv,
-                        const TorqueModelConfig& config) {
-    return [&inertia, &inertia_inv, config, eci_state](Real t, const VecX& state_vec) -> VecX {
+                        const TorqueModelConfig& config,
+                        ActuatorSuite<4,3>& suite,
+                        const ActuatorCommands<4,3>& cmds,
+                        Real dt) {
+    return [&inertia, &inertia_inv, config, eci_state, &suite, &cmds, dt](Real t, const VecX& state_vec) -> VecX {
         AttitudeState att = unpackAttitude(state_vec.head<ATTITUDE_STATE_DIM>());
         AttitudeStateDot dot = computeTotalAttitudeDynamics(att, eci_state,
-                                                             inertia, inertia_inv, config);
+                                                             inertia, inertia_inv, config, suite, cmds, t, dt, constants::MU_EARTH);
         return packAttitudeDot(dot);
     };
 }

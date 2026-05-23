@@ -37,12 +37,61 @@ int main() {
     torque_config.useGravityGradient = true;
     torque_config.useDrag = true;
     torque_config.useSRP = true;
+    torque_config.useActuators = true;
     torque_config.center_of_mass = Vec3(0.1, 0.05, 0.0);
 
     ForceModelConfig force_config;
     force_config.useDrag = true;
     force_config.useJ2 = true;
     force_config.useSRP = true;
+
+    // controller
+    Vec3 sun_dir_eci = Vec3(1.0, 0.0, 0.0); // Simplified constant sun direction for testing
+    torque_config.sun_dir_eci = sun_dir_eci;
+    Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), sun_dir_eci, Vec3::UnitY(), Vec3::UnitZ());
+    QuaternionPDController ctrl{
+        // .k_p = 0.027,
+        // .k_d = 1.35
+        .k_p = 0.0,
+        .k_d = 0.0,
+    };
+
+    // actuators 
+    ActuatorSuite<4,3> suite;
+    const Real beta = std::atan(std::sqrt(2.0)); // 54.74 deg from z-axis
+    const Real sb   = std::sin(beta);             // ≈ 0.8165
+    const Real cb   = std::cos(beta);             // ≈ 0.5774
+
+    ReactionWheel rw_proto;
+    rw_proto.inertia       = 0.05;    // kg·m²   (medium-class wheel)
+    rw_proto.max_torque    = 0.5;     // N·m
+    rw_proto.max_speed     = 500.0;   // rad/s   (~4800 RPM)
+    rw_proto.friction_coef = 1.0e-4;  // N·m·s/rad
+    rw_proto.omega_w       = 0.0;     // start at rest
+
+    // Axes at 45°, 135°, 225°, 315° around z
+    suite.rwa.wheels[0]             = rw_proto;
+    suite.rwa.wheels[0].spin_axis_b = Vec3(sb * std::cos(1*M_PI/4),
+                                            sb * std::sin(1*M_PI/4), cb).normalized();
+
+    suite.rwa.wheels[1]             = rw_proto;
+    suite.rwa.wheels[1].spin_axis_b = Vec3(sb * std::cos(3*M_PI/4),
+                                            sb * std::sin(3*M_PI/4), cb).normalized();
+
+    suite.rwa.wheels[2]             = rw_proto;
+    suite.rwa.wheels[2].spin_axis_b = Vec3(sb * std::cos(5*M_PI/4),
+                                            sb * std::sin(5*M_PI/4), cb).normalized();
+
+    suite.rwa.wheels[3]             = rw_proto;
+    suite.rwa.wheels[3].spin_axis_b = Vec3(sb * std::cos(7*M_PI/4),
+                                            sb * std::sin(7*M_PI/4), cb).normalized();
+
+    suite.mtq = MagnetorquerAssembly::make_xyz(10.0); // [A·m²]
+
+    ActuatorCommands<4,3> cmds;
+    cmds.tau_rwa_cmd = Vec3::Zero();
+    cmds.tau_mtq_cmd = Vec3::Zero();
+    cmds.thr_cmds    = {};
 
     Mat3 inertia_tensor;
     inertia_tensor << 18.5, -0.3,  0.1,
@@ -51,13 +100,13 @@ int main() {
 
     Mat3 inertia_tensor_inv = inertia_tensor.inverse();
 
-    DerivFunc deriv = makeSixDoFDeriv(inertia_tensor, inertia_tensor_inv, force_config, torque_config);
-
     //timing parameters
     Real t0 = 0.0;
     Real tf = 3600; // simulate time in seconds
     Real dt = 0.1; // time step
     VecX t_vec = Eigen::VectorXd::LinSpaced(static_cast<int>((tf - t0) / dt) + 1, t0, tf);
+
+    DerivFunc deriv = makeSixDoFDeriv(inertia_tensor, inertia_tensor_inv, force_config, torque_config, suite, cmds, q_d, ctrl, 0.1);
 
     SixDoFStateMat state_history = propagate6DoF(sixdof_init, t0, tf, dt, deriv);
 

@@ -3,6 +3,7 @@
 #include "translational_state.hpp"
 #include "attitude_state.hpp"
 #include "state_conversions.hpp"
+#include "actuator.hpp"
 
 namespace orb {
 
@@ -47,6 +48,7 @@ struct TorqueModelConfig {
     bool useGravityGradient = true;
     bool useDrag            = false;
     bool useSRP             = false;
+    bool useActuators        = false;
 
     // Drag parameters
     Real Cd   = 2.2;
@@ -76,6 +78,10 @@ AttitudeStateDot computeTotalAttitudeDynamics(const AttitudeState& attitude_stat
                              Mat3& inertia_tensor,
                              Mat3& inertia_tensor_inv,
                              const TorqueModelConfig& config,
+                             ActuatorSuite<4,3>& suite,
+                             const ActuatorCommands<4,3>& cmds,
+                             Real t_sec,
+                             Real dt,
                              Real mu = constants::MU_EARTH);
 
 DerivFunc makeAttDeriv(const ECIState& eci_state,

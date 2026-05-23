@@ -13,3 +13,4 @@
 #include "propagator.hpp"
 #include "satellite.hpp"
 #include "plot.hpp"
+#include "actuator.hpp"
