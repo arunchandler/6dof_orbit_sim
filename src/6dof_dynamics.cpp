@@ -18,6 +18,9 @@ SixDoFStateDot sixDoFDynamics(const SixDoFState& state,
 
     Vec3 control_torque = ctrl.compute_torque(state.attitude, q_desired);
     cmds.tau_rwa_cmd = control_torque; // For simplicity, send all control torque to RWAs
+    const Vec3 h_rw = suite.rwa.total_momentum();
+    Real k_desat = 0.0001; // Desaturation gain (tunable)
+    cmds.tau_mtq_cmd = -k_desat * h_rw;
     ECIStateDot eci_dot = computeTotalTranslationalDynamics(state.eci, force_config);
     AttitudeStateDot attitude_dot = computeTotalAttitudeDynamics(state.attitude, state.eci, inertia_tensor, inertia_tensor_inv, torque_config, suite, cmds, t_sec, dt);
 
@@ -33,7 +36,7 @@ DerivFunc makeSixDoFDeriv(Mat3& inertia, Mat3& inertia_inv,
                            const Quaternion& q_desired,
                            const QuaternionPDController& ctrl,
                            Real dt) {
-    return [&](Real t, const VecX& state_vec) -> VecX {
+    return [&, dt](Real t, const VecX& state_vec) -> VecX {
         SixDoFState state = unpack6DoF(state_vec);
         
         SixDoFStateDot dot = sixDoFDynamics(state, inertia, inertia_inv,

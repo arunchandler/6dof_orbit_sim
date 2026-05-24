@@ -50,10 +50,8 @@ int main() {
     torque_config.sun_dir_eci = sun_dir_eci;
     Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), sun_dir_eci, Vec3::UnitY(), Vec3::UnitZ());
     QuaternionPDController ctrl{
-        // .k_p = 0.027,
-        // .k_d = 1.35
-        .k_p = 0.0,
-        .k_d = 0.0,
+        .k_p = 0.03,
+        .k_d = 2.6
     };
 
     // actuators 
@@ -108,7 +106,29 @@ int main() {
 
     DerivFunc deriv = makeSixDoFDeriv(inertia_tensor, inertia_tensor_inv, force_config, torque_config, suite, cmds, q_d, ctrl, 0.1);
 
-    SixDoFStateMat state_history = propagate6DoF(sixdof_init, t0, tf, dt, deriv);
+    int n_steps = static_cast<int>((tf - t0) / dt) + 1;
+    SixDoFStateMat state_history(13, n_steps);
+
+    VecX state_vec = pack6DoF(sixdof_init);
+    state_history.col(0) = state_vec;
+
+    const MatX Apinv = suite.rwa.axis_matrix()
+                        .completeOrthogonalDecomposition().pseudoInverse();
+
+    // cant use propagate6DoF because we need to commit wheel speeds at each step, so we do the RK4 loop manually here
+    for (int i = 1; i < n_steps; ++i) {
+        Real t = t0 + (i - 1) * dt;
+
+        // 1. RK4 step (your existing integrator, now called for one step at a time)
+        state_vec = rk4Step(deriv, t, state_vec, dt);
+
+        // 2. Commit wheel speeds exactly once per timestep
+        const VecX tau_w = -Apinv * cmds.tau_rwa_cmd;
+        for (int j = 0; j < 4; ++j)
+            suite.rwa.wheels[j].commit(tau_w(j), dt);
+
+        state_history.col(i) = state_vec;
+    }
 
     save_state_history(state_history);
     TranslationalStateMat trans_history = state_history.topRows(6);

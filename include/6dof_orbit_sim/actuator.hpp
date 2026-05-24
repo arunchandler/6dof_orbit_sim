@@ -79,6 +79,20 @@ struct ReactionWheel {
     // Step the wheel and return the reaction torque on the spacecraft body.
     // dt should match your outer integrator timestep.
     ActuatorOutput update(Real tau_cmd, Real dt);
+
+    ActuatorOutput torque_only(Real tau_cmd) const {
+        const Real tau = std::min(std::max(tau_cmd, -max_torque), max_torque);
+        ActuatorOutput out;
+        out.torque_b = -tau * spin_axis_b;
+        return out;
+    }
+
+    void commit(Real tau_cmd, Real dt) {
+        const Real tau     = std::min(std::max(tau_cmd, -max_torque), max_torque);
+        const Real tau_net = tau - friction_coef * omega_w;
+        omega_w += (tau_net / inertia) * dt;
+        omega_w  = std::min(std::max(omega_w, -max_speed), max_speed);
+    }
  
     Vec3 momentum()     const;
     bool is_saturated() const;
@@ -111,7 +125,7 @@ struct ReactionWheelArray {
     {
         const MatX A     = axis_matrix();
         const MatX Apinv = A.completeOrthogonalDecomposition().pseudoInverse();
-        const VecX tau_w = Apinv * tau_cmd_b;
+        const VecX tau_w = -Apinv * tau_cmd_b;
  
         ActuatorOutput total;
         for (std::size_t i = 0; i < N; ++i)
@@ -270,7 +284,13 @@ AttitudeStateDot computeActuatorAttitudeDynamics(
  
     // Accumulate torques from all subsystems
     ActuatorOutput total;
-    total += suite.rwa.update(cmds.tau_rwa_cmd, dt);
+    const MatX A     = suite.rwa.axis_matrix();
+    const MatX Apinv = A.completeOrthogonalDecomposition().pseudoInverse();
+    const VecX tau_w = - Apinv * cmds.tau_rwa_cmd;
+    ActuatorOutput rwa_out;
+    for (std::size_t i = 0; i < N_RWA; ++i)
+        rwa_out += suite.rwa.wheels[i].torque_only(tau_w(i));
+    total += rwa_out;
     total += suite.mtq.apply_torque_cmd(cmds.tau_mtq_cmd, B_body);
     for (std::size_t i = 0; i < N_THR_PAIRS; ++i)
         total += suite.thruster_pairs[i].fire(cmds.thr_cmds[i]);
