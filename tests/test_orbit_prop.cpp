@@ -50,8 +50,10 @@ int main() {
     torque_config.sun_dir_eci = sun_dir_eci;
     Quaternion q_d = make_desired_quaternion(Vec3::UnitX(), sun_dir_eci, Vec3::UnitY(), Vec3::UnitZ());
     QuaternionPDController ctrl{
-        .k_p = 0.03,
-        .k_d = 2.6
+        // .k_p = 0.03,
+        // .k_d = 2.6
+        .k_p = 0.0,
+        .k_d = 0.0
     };
 
     // actuators 
@@ -119,8 +121,8 @@ int main() {
     for (int i = 1; i < n_steps; ++i) {
         Real t = t0 + (i - 1) * dt;
 
-        // 1. RK4 step (your existing integrator, now called for one step at a time)
         state_vec = rk4Step(deriv, t, state_vec, dt);
+        // state_vec = eulerStep(deriv, t, state_vec, dt);
 
         // 2. Commit wheel speeds exactly once per timestep
         const VecX tau_w = -Apinv * cmds.tau_rwa_cmd;

@@ -16,4 +16,8 @@ inline VecX rk4Step(DerivFunc f, Real t, const VecX& state, Real dt) {
     return state + (dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4);
 }
 
+inline VecX eulerStep(DerivFunc f, Real t, const VecX& state, Real dt) {
+    return state + dt * f(t, state);
+}
+
 } // namespace orb
